@@ -14,7 +14,10 @@ import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as ForgotPasswordRouteImport } from './routes/forgot-password'
 import { Route as ResetPasswordRouteImport } from './routes/reset-password'
+import { Route as AuthenticatedCallsRouteImport } from './routes/_authenticated/calls'
 import { Route as AuthenticatedChatsRouteImport } from './routes/_authenticated/chats'
+import { Route as AuthenticatedContactsRouteImport } from './routes/_authenticated/contacts'
+import { Route as AuthenticatedNotificationsRouteImport } from './routes/_authenticated/notifications'
 import { Route as AuthenticatedOnboardingRouteImport } from './routes/_authenticated/onboarding'
 import { Route as AuthenticatedChatsIndexRouteImport } from './routes/_authenticated/chats.index'
 import { Route as AuthenticatedChatsIdRouteImport } from './routes/_authenticated/chats.$id'
@@ -43,11 +46,27 @@ const ResetPasswordRoute = ResetPasswordRouteImport.update({
   path: '/reset-password',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AuthenticatedCallsRoute = AuthenticatedCallsRouteImport.update({
+  id: '/calls',
+  path: '/calls',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedChatsRoute = AuthenticatedChatsRouteImport.update({
   id: '/chats',
   path: '/chats',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedContactsRoute = AuthenticatedContactsRouteImport.update({
+  id: '/contacts',
+  path: '/contacts',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedNotificationsRoute =
+  AuthenticatedNotificationsRouteImport.update({
+    id: '/notifications',
+    path: '/notifications',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedOnboardingRoute = AuthenticatedOnboardingRouteImport.update({
   id: '/onboarding',
   path: '/onboarding',
@@ -69,7 +88,10 @@ export interface FileRoutesByFullPath {
   '/auth': typeof AuthRoute
   '/forgot-password': typeof ForgotPasswordRoute
   '/reset-password': typeof ResetPasswordRoute
+  '/calls': typeof AuthenticatedCallsRoute
   '/chats': typeof AuthenticatedChatsRouteWithChildren
+  '/contacts': typeof AuthenticatedContactsRoute
+  '/notifications': typeof AuthenticatedNotificationsRoute
   '/onboarding': typeof AuthenticatedOnboardingRoute
   '/chats/$id': typeof AuthenticatedChatsIdRoute
   '/chats/': typeof AuthenticatedChatsIndexRoute
@@ -79,6 +101,9 @@ export interface FileRoutesByTo {
   '/auth': typeof AuthRoute
   '/forgot-password': typeof ForgotPasswordRoute
   '/reset-password': typeof ResetPasswordRoute
+  '/calls': typeof AuthenticatedCallsRoute
+  '/contacts': typeof AuthenticatedContactsRoute
+  '/notifications': typeof AuthenticatedNotificationsRoute
   '/onboarding': typeof AuthenticatedOnboardingRoute
   '/chats/$id': typeof AuthenticatedChatsIdRoute
   '/chats': typeof AuthenticatedChatsIndexRoute
@@ -90,7 +115,10 @@ export interface FileRoutesById {
   '/auth': typeof AuthRoute
   '/forgot-password': typeof ForgotPasswordRoute
   '/reset-password': typeof ResetPasswordRoute
+  '/_authenticated/calls': typeof AuthenticatedCallsRoute
   '/_authenticated/chats': typeof AuthenticatedChatsRouteWithChildren
+  '/_authenticated/contacts': typeof AuthenticatedContactsRoute
+  '/_authenticated/notifications': typeof AuthenticatedNotificationsRoute
   '/_authenticated/onboarding': typeof AuthenticatedOnboardingRoute
   '/_authenticated/chats/$id': typeof AuthenticatedChatsIdRoute
   '/_authenticated/chats/': typeof AuthenticatedChatsIndexRoute
@@ -102,7 +130,10 @@ export interface FileRouteTypes {
     | '/auth'
     | '/forgot-password'
     | '/reset-password'
+    | '/calls'
     | '/chats'
+    | '/contacts'
+    | '/notifications'
     | '/onboarding'
     | '/chats/$id'
     | '/chats/'
@@ -112,6 +143,9 @@ export interface FileRouteTypes {
     | '/auth'
     | '/forgot-password'
     | '/reset-password'
+    | '/calls'
+    | '/contacts'
+    | '/notifications'
     | '/onboarding'
     | '/chats/$id'
     | '/chats'
@@ -122,7 +156,10 @@ export interface FileRouteTypes {
     | '/auth'
     | '/forgot-password'
     | '/reset-password'
+    | '/_authenticated/calls'
     | '/_authenticated/chats'
+    | '/_authenticated/contacts'
+    | '/_authenticated/notifications'
     | '/_authenticated/onboarding'
     | '/_authenticated/chats/$id'
     | '/_authenticated/chats/'
@@ -173,11 +210,32 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ResetPasswordRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/_authenticated/calls': {
+      id: '/_authenticated/calls'
+      path: '/calls'
+      fullPath: '/calls'
+      preLoaderRoute: typeof AuthenticatedCallsRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/chats': {
       id: '/_authenticated/chats'
       path: '/chats'
       fullPath: '/chats'
       preLoaderRoute: typeof AuthenticatedChatsRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/contacts': {
+      id: '/_authenticated/contacts'
+      path: '/contacts'
+      fullPath: '/contacts'
+      preLoaderRoute: typeof AuthenticatedContactsRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/notifications': {
+      id: '/_authenticated/notifications'
+      path: '/notifications'
+      fullPath: '/notifications'
+      preLoaderRoute: typeof AuthenticatedNotificationsRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/onboarding': {
@@ -218,12 +276,18 @@ const AuthenticatedChatsRouteWithChildren =
   AuthenticatedChatsRoute._addFileChildren(AuthenticatedChatsRouteChildren)
 
 interface AuthenticatedRouteRouteChildren {
+  AuthenticatedCallsRoute: typeof AuthenticatedCallsRoute
   AuthenticatedChatsRoute: typeof AuthenticatedChatsRouteWithChildren
+  AuthenticatedContactsRoute: typeof AuthenticatedContactsRoute
+  AuthenticatedNotificationsRoute: typeof AuthenticatedNotificationsRoute
   AuthenticatedOnboardingRoute: typeof AuthenticatedOnboardingRoute
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
+  AuthenticatedCallsRoute: AuthenticatedCallsRoute,
   AuthenticatedChatsRoute: AuthenticatedChatsRouteWithChildren,
+  AuthenticatedContactsRoute: AuthenticatedContactsRoute,
+  AuthenticatedNotificationsRoute: AuthenticatedNotificationsRoute,
   AuthenticatedOnboardingRoute: AuthenticatedOnboardingRoute,
 }
 
