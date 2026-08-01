@@ -87,7 +87,10 @@ function Studio() {
       }),
     ]);
     setSaving(false);
-    if (e1 || e2) return toast.error("Could not save your Studio settings");
+    if (e1 || e2) {
+      toast.error("Could not save your Studio settings");
+      return;
+    }
     toast.success("Studio updated");
   }
 

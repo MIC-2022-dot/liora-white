@@ -19,8 +19,12 @@ import { Route as AuthenticatedChatsRouteImport } from './routes/_authenticated/
 import { Route as AuthenticatedContactsRouteImport } from './routes/_authenticated/contacts'
 import { Route as AuthenticatedNotificationsRouteImport } from './routes/_authenticated/notifications'
 import { Route as AuthenticatedOnboardingRouteImport } from './routes/_authenticated/onboarding'
+import { Route as AuthenticatedProfileRouteImport } from './routes/_authenticated/profile'
+import { Route as AuthenticatedSettingsRouteImport } from './routes/_authenticated/settings'
+import { Route as AuthenticatedStudioRouteImport } from './routes/_authenticated/studio'
 import { Route as AuthenticatedChatsIndexRouteImport } from './routes/_authenticated/chats.index'
 import { Route as AuthenticatedChatsIdRouteImport } from './routes/_authenticated/chats.$id'
+import { Route as AuthenticatedUUsernameRouteImport } from './routes/_authenticated/u.$username'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -72,6 +76,21 @@ const AuthenticatedOnboardingRoute = AuthenticatedOnboardingRouteImport.update({
   path: '/onboarding',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedProfileRoute = AuthenticatedProfileRouteImport.update({
+  id: '/profile',
+  path: '/profile',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedSettingsRoute = AuthenticatedSettingsRouteImport.update({
+  id: '/settings',
+  path: '/settings',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedStudioRoute = AuthenticatedStudioRouteImport.update({
+  id: '/studio',
+  path: '/studio',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedChatsIndexRoute = AuthenticatedChatsIndexRouteImport.update({
   id: '/',
   path: '/',
@@ -81,6 +100,11 @@ const AuthenticatedChatsIdRoute = AuthenticatedChatsIdRouteImport.update({
   id: '/$id',
   path: '/$id',
   getParentRoute: () => AuthenticatedChatsRoute,
+} as any)
+const AuthenticatedUUsernameRoute = AuthenticatedUUsernameRouteImport.update({
+  id: '/u/$username',
+  path: '/u/$username',
+  getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 
 export interface FileRoutesByFullPath {
@@ -93,7 +117,11 @@ export interface FileRoutesByFullPath {
   '/contacts': typeof AuthenticatedContactsRoute
   '/notifications': typeof AuthenticatedNotificationsRoute
   '/onboarding': typeof AuthenticatedOnboardingRoute
+  '/profile': typeof AuthenticatedProfileRoute
+  '/settings': typeof AuthenticatedSettingsRoute
+  '/studio': typeof AuthenticatedStudioRoute
   '/chats/$id': typeof AuthenticatedChatsIdRoute
+  '/u/$username': typeof AuthenticatedUUsernameRoute
   '/chats/': typeof AuthenticatedChatsIndexRoute
 }
 export interface FileRoutesByTo {
@@ -105,7 +133,11 @@ export interface FileRoutesByTo {
   '/contacts': typeof AuthenticatedContactsRoute
   '/notifications': typeof AuthenticatedNotificationsRoute
   '/onboarding': typeof AuthenticatedOnboardingRoute
+  '/profile': typeof AuthenticatedProfileRoute
+  '/settings': typeof AuthenticatedSettingsRoute
+  '/studio': typeof AuthenticatedStudioRoute
   '/chats/$id': typeof AuthenticatedChatsIdRoute
+  '/u/$username': typeof AuthenticatedUUsernameRoute
   '/chats': typeof AuthenticatedChatsIndexRoute
 }
 export interface FileRoutesById {
@@ -120,7 +152,11 @@ export interface FileRoutesById {
   '/_authenticated/contacts': typeof AuthenticatedContactsRoute
   '/_authenticated/notifications': typeof AuthenticatedNotificationsRoute
   '/_authenticated/onboarding': typeof AuthenticatedOnboardingRoute
+  '/_authenticated/profile': typeof AuthenticatedProfileRoute
+  '/_authenticated/settings': typeof AuthenticatedSettingsRoute
+  '/_authenticated/studio': typeof AuthenticatedStudioRoute
   '/_authenticated/chats/$id': typeof AuthenticatedChatsIdRoute
+  '/_authenticated/u/$username': typeof AuthenticatedUUsernameRoute
   '/_authenticated/chats/': typeof AuthenticatedChatsIndexRoute
 }
 export interface FileRouteTypes {
@@ -135,7 +171,11 @@ export interface FileRouteTypes {
     | '/contacts'
     | '/notifications'
     | '/onboarding'
+    | '/profile'
+    | '/settings'
+    | '/studio'
     | '/chats/$id'
+    | '/u/$username'
     | '/chats/'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -147,7 +187,11 @@ export interface FileRouteTypes {
     | '/contacts'
     | '/notifications'
     | '/onboarding'
+    | '/profile'
+    | '/settings'
+    | '/studio'
     | '/chats/$id'
+    | '/u/$username'
     | '/chats'
   id:
     | '__root__'
@@ -161,7 +205,11 @@ export interface FileRouteTypes {
     | '/_authenticated/contacts'
     | '/_authenticated/notifications'
     | '/_authenticated/onboarding'
+    | '/_authenticated/profile'
+    | '/_authenticated/settings'
+    | '/_authenticated/studio'
     | '/_authenticated/chats/$id'
+    | '/_authenticated/u/$username'
     | '/_authenticated/chats/'
   fileRoutesById: FileRoutesById
 }
@@ -245,6 +293,27 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedOnboardingRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/profile': {
+      id: '/_authenticated/profile'
+      path: '/profile'
+      fullPath: '/profile'
+      preLoaderRoute: typeof AuthenticatedProfileRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/settings': {
+      id: '/_authenticated/settings'
+      path: '/settings'
+      fullPath: '/settings'
+      preLoaderRoute: typeof AuthenticatedSettingsRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/studio': {
+      id: '/_authenticated/studio'
+      path: '/studio'
+      fullPath: '/studio'
+      preLoaderRoute: typeof AuthenticatedStudioRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/chats/': {
       id: '/_authenticated/chats/'
       path: '/'
@@ -258,6 +327,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/chats/$id'
       preLoaderRoute: typeof AuthenticatedChatsIdRouteImport
       parentRoute: typeof AuthenticatedChatsRoute
+    }
+    '/_authenticated/u/$username': {
+      id: '/_authenticated/u/$username'
+      path: '/u/$username'
+      fullPath: '/u/$username'
+      preLoaderRoute: typeof AuthenticatedUUsernameRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
     }
   }
 }
@@ -281,6 +357,10 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedContactsRoute: typeof AuthenticatedContactsRoute
   AuthenticatedNotificationsRoute: typeof AuthenticatedNotificationsRoute
   AuthenticatedOnboardingRoute: typeof AuthenticatedOnboardingRoute
+  AuthenticatedProfileRoute: typeof AuthenticatedProfileRoute
+  AuthenticatedSettingsRoute: typeof AuthenticatedSettingsRoute
+  AuthenticatedStudioRoute: typeof AuthenticatedStudioRoute
+  AuthenticatedUUsernameRoute: typeof AuthenticatedUUsernameRoute
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
@@ -289,6 +369,10 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedContactsRoute: AuthenticatedContactsRoute,
   AuthenticatedNotificationsRoute: AuthenticatedNotificationsRoute,
   AuthenticatedOnboardingRoute: AuthenticatedOnboardingRoute,
+  AuthenticatedProfileRoute: AuthenticatedProfileRoute,
+  AuthenticatedSettingsRoute: AuthenticatedSettingsRoute,
+  AuthenticatedStudioRoute: AuthenticatedStudioRoute,
+  AuthenticatedUUsernameRoute: AuthenticatedUUsernameRoute,
 }
 
 const AuthenticatedRouteRouteWithChildren =

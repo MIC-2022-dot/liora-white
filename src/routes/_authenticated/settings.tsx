@@ -39,7 +39,10 @@ function SettingsPage() {
       .update({ display_name: displayName.trim(), bio: bio.trim() || null })
       .eq("id", user.id);
     setSaving(false);
-    if (error) return toast.error("Could not save your changes");
+    if (error) {
+      toast.error("Could not save your changes");
+      return;
+    }
     await refresh();
     toast.success("Saved");
   }
