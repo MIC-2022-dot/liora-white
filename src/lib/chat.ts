@@ -66,11 +66,10 @@ export async function sendMessage(input: {
       ? (input.body ?? "")
       : kind === "image"
         ? "Photo"
-        : kind === "video"
-          ? "Video"
-          : kind === "audio"
-            ? "Voice message"
-            : "Attachment";
+        : kind === "audio"
+          ? "Voice message"
+          : "Attachment";
+
 
   await supabase
     .from("conversations")
