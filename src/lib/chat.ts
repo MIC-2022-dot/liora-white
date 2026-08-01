@@ -40,7 +40,7 @@ export async function sendMessage(input: {
   conversationId: string;
   senderId: string;
   body?: string | null;
-  kind?: "text" | "image" | "video" | "audio" | "file";
+  kind?: "text" | "image" | "audio" | "file";
   mediaUrl?: string | null;
   mediaMeta?: Record<string, unknown> | null;
   replyTo?: string | null;
