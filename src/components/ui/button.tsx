@@ -16,13 +16,23 @@ const buttonVariants = cva(
         secondary: "bg-secondary text-secondary-foreground shadow-sm hover:bg-secondary/80",
         ghost: "hover:bg-accent hover:text-accent-foreground",
         link: "text-primary underline-offset-4 hover:underline",
+        /* Liora call surface variants */
+        callAnswer: "bg-success text-success-foreground shadow-lg hover:bg-success/90",
+        callEnd: "bg-destructive text-destructive-foreground shadow-lg hover:bg-destructive/90",
+        callControl: "bg-white/12 text-ink-foreground backdrop-blur hover:bg-white/20",
+        callControlOff: "bg-ink-foreground text-ink hover:bg-ink-foreground/90",
+        aiSoft:
+          "bg-primary/15 text-primary border border-primary/30 hover:bg-primary/25 backdrop-blur",
+        hero: "bg-primary text-primary-foreground shadow-lg hover:bg-primary/90",
       },
       size: {
         default: "h-9 px-4 py-2",
         sm: "h-8 rounded-md px-3 text-xs",
         lg: "h-10 rounded-md px-8",
         icon: "h-9 w-9",
+        call: "size-14 rounded-full [&_svg]:size-6",
       },
+
     },
     defaultVariants: {
       variant: "default",
