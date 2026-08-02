@@ -136,14 +136,74 @@ export function CallProvider({ children }: { children: ReactNode }) {
         const [stream] = e.streams;
         if (stream) setRemoteStream(stream);
       };
-      pc.onconnectionstatechange = () => {
-        if (pc.connectionState === "connected") {
-          setCall((c) => (c ? { ...c, status: "active", startedAt: c.startedAt ?? Date.now() } : c));
-        }
-        if (pc.connectionState === "failed" || pc.connectionState === "disconnected") {
-          endLocal();
-        }
-      };
+      let disconnectTimer: ReturnType<typeof setTimeout> | null = null;
+
+pc.onconnectionstatechange = () => {
+  const state = pc.connectionState;
+
+  console.log("[LIORA WebRTC] Connection state:", state);
+
+  if (state === "connected") {
+    if (disconnectTimer) {
+      clearTimeout(disconnectTimer);
+      disconnectTimer = null;
+    }
+
+    setCall((c) =>
+      c
+        ? {
+            ...c,
+            status: "active",
+            startedAt: c.startedAt ?? Date.now(),
+          }
+        : c,
+    );
+  }
+
+  if (state === "failed") {
+    console.warn("[LIORA WebRTC] Connection failed");
+
+    if (disconnectTimer) {
+      clearTimeout(disconnectTimer);
+      disconnectTimer = null;
+    }
+
+    endLocal();
+  }
+
+  if (state === "disconnected") {
+    console.warn(
+      "[LIORA WebRTC] Temporarily disconnected — waiting for recovery",
+    );
+
+    if (disconnectTimer) {
+      clearTimeout(disconnectTimer);
+    }
+
+    disconnectTimer = setTimeout(() => {
+      disconnectTimer = null;
+
+      if (pc.connectionState === "disconnected") {
+        console.warn(
+          "[LIORA WebRTC] Connection did not recover after 10 seconds",
+        );
+        endLocal();
+      }
+    }, 10000);
+  }
+};
+pc.oniceconnectionstatechange = () => {
+  console.log(
+    "[LIORA WebRTC] ICE connection state:",
+    pc.iceConnectionState,
+  );
+};
+pc.onsignalingstatechange = () => {
+  console.log(
+    "[LIORA WebRTC] Signaling state:",
+    pc.signalingState,
+  );
+};
       pcRef.current = pc;
       return pc;
     },
