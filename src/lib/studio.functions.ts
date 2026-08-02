@@ -33,7 +33,7 @@ export const studioProviderStatus = createServerFn({ method: "GET" })
  */
 export const saveAvatarSource = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { path: string; bytes: number; width?: number; height?: number }) => {
+  .validator((input: { path: string; bytes: number; width?: number; height?: number }) => {
     if (!input?.path) throw new Error("path is required");
     return input;
   })
@@ -91,7 +91,7 @@ export const clearAvatarSource = createServerFn({ method: "POST" })
 
 export const startAvatarCallSession = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { callId: string }) => {
+  .validator((input: { callId: string }) => {
     if (!input?.callId) throw new Error("callId is required");
     return input;
   })
@@ -130,7 +130,7 @@ export const startAvatarCallSession = createServerFn({ method: "POST" })
 
 export const endAvatarCallSession = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { callId: string }) => input)
+  .validator((input: { callId: string }) => input)
   .handler(async ({ data, context }) => {
     const { assertStudio } = await import("@/lib/studio-guard.server");
     await assertStudio(context);
@@ -173,7 +173,7 @@ export const previewVoice = createServerFn({ method: "POST" })
  */
 export const avatarReply = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { messages: { role: "user" | "assistant"; content: string }[] }) => {
+  .validator((input: { messages: { role: "user" | "assistant"; content: string }[] }) => {
     if (!Array.isArray(input?.messages)) throw new Error("messages is required");
     return { messages: input.messages.slice(-20) };
   })

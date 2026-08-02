@@ -90,7 +90,10 @@ export function CallProvider({ children }: { children: ReactNode }) {
   const pcRef = useRef<RTCPeerConnection | null>(null);
   const channelRef = useRef<RealtimeChannel | null>(null);
   const pendingOffer = useRef<RTCSessionDescriptionInit | null>(null);
+  const pendingOfferCallId = useRef<string | null>(null);
   const pendingCandidates = useRef<RTCIceCandidateInit[]>([]);
+  const sendChannels = useRef<Map<string, RealtimeChannel>>(new Map());
+  const endedRef = useRef(false);
   const localRef = useRef<MediaStream | null>(null);
   const autoAnswerTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const callRef = useRef<ActiveCall | null>(null);
@@ -99,21 +102,44 @@ export function CallProvider({ children }: { children: ReactNode }) {
   const canUseAi = hasStudio;
 
   const send = useCallback(async (toUserId: string, event: string, payload: unknown) => {
-    const ch = supabase.channel(`liora-call:${toUserId}`);
-    await ch.subscribe();
+    // Reuse a per-destination channel for the lifetime of this call to avoid
+    // ephemeral subscriptions that can drop signalling messages during ICE.
+    let ch = sendChannels.current.get(toUserId);
+    if (!ch) {
+      ch = supabase.channel(`liora-call:${toUserId}`);
+      await ch.subscribe();
+      sendChannels.current.set(toUserId, ch);
+    }
     await ch.send({ type: "broadcast", event, payload });
-    setTimeout(() => void supabase.removeChannel(ch), 1500);
   }, []);
 
   const cleanup = useCallback(() => {
+    if (endedRef.current) return;
+    endedRef.current = true;
+
     if (autoAnswerTimer.current) clearTimeout(autoAnswerTimer.current);
     autoAnswerTimer.current = null;
-    pcRef.current?.close();
+
+    try {
+      pcRef.current?.close();
+    } catch {}
     pcRef.current = null;
+
     localRef.current?.getTracks().forEach((t) => t.stop());
     localRef.current = null;
+
     pendingOffer.current = null;
+    pendingOfferCallId.current = null;
     pendingCandidates.current = [];
+
+    // Remove any temporary signalling channels we opened for sending.
+    for (const ch of sendChannels.current.values()) {
+      try {
+        void supabase.removeChannel(ch);
+      } catch {}
+    }
+    sendChannels.current.clear();
+
     setLocalStream(null);
     setRemoteStream(null);
     setMicEnabled(true);
@@ -121,6 +147,7 @@ export function CallProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const endLocal = useCallback(() => {
+    if (endedRef.current) return;
     cleanup();
     setCall((c) => (c ? { ...c, status: "ended" } : null));
     setTimeout(() => setCall(null), 1200);
@@ -138,19 +165,14 @@ export function CallProvider({ children }: { children: ReactNode }) {
       };
   let disconnectTimer: ReturnType<typeof setTimeout> | null = null;
 
-pc.onconnectionstatechange = () => {
+      pc.onconnectionstatechange = () => {
   const state = pc.connectionState;
 
   console.log("[LIORA WebRTC] Connection state:", state);
 
+  // Treat connected as the canonical live state.
   if (state === "connected") {
-    if (disconnectTimer) {
-      clearTimeout(disconnectTimer);
-      disconnectTimer = null;
-    }
-
     console.log("[LIORA WebRTC] Call connection established");
-
     setCall((c) =>
       c
         ? {
@@ -160,7 +182,6 @@ pc.onconnectionstatechange = () => {
           }
         : c,
     );
-
     return;
   }
 
@@ -171,47 +192,14 @@ pc.onconnectionstatechange = () => {
 
   if (state === "failed") {
     console.error("[LIORA WebRTC] Peer connection FAILED");
-
-    if (disconnectTimer) {
-      clearTimeout(disconnectTimer);
-      disconnectTimer = null;
-    }
-
-    // Only end the call when WebRTC explicitly reports FAILED.
+    // Only treat FAILED as unrecoverable — terminate the call.
     endLocal();
     return;
   }
 
   if (state === "disconnected") {
-    console.warn(
-      "[LIORA WebRTC] Temporarily disconnected — allowing recovery",
-    );
-
-    if (disconnectTimer) {
-      clearTimeout(disconnectTimer);
-    }
-
-    disconnectTimer = setTimeout(() => {
-      disconnectTimer = null;
-
-      const currentState = pc.connectionState;
-
-      console.log(
-        "[LIORA WebRTC] Disconnection check:",
-        currentState,
-      );
-
-      // IMPORTANT:
-      // Do not end the call merely because it stayed disconnected.
-      // ICE may still recover.
-      if (currentState === "failed") {
-        console.error(
-          "[LIORA WebRTC] Connection became FAILED after disconnect",
-        );
-        endLocal();
-      }
-    }, 15000);
-
+    console.warn("[LIORA WebRTC] Temporarily disconnected — allowing recovery");
+    // Allow ICE / connection recovery; do not end the call here.
     return;
   }
 };
@@ -299,6 +287,9 @@ pc.onsignalingstatechange = () => {
           return;
         }
         pendingOffer.current = p.offer;
+        pendingOfferCallId.current = p.callId;
+        // Mark call as active (not ended) when a new incoming invite arrives.
+        endedRef.current = false;
         setCall({
           id: p.callId,
           peer: p.peer,
@@ -311,7 +302,9 @@ pc.onsignalingstatechange = () => {
         });
       })
       .on("broadcast", { event: "answer" }, async ({ payload }) => {
-        const p = payload as { answer: RTCSessionDescriptionInit; mode: AnswerMode };
+        const p = payload as { callId?: string; answer: RTCSessionDescriptionInit; mode: AnswerMode };
+        // Validate callId matches current call
+        if (!p.callId || p.callId !== callRef.current?.id) return;
         const pc = pcRef.current;
         if (!pc) return;
         await pc.setRemoteDescription(new RTCSessionDescription(p.answer));
@@ -320,25 +313,33 @@ pc.onsignalingstatechange = () => {
         setCall((c) => (c ? { ...c, status: "active", startedAt: Date.now() } : c));
       })
       .on("broadcast", { event: "ice" }, async ({ payload }) => {
-        const p = payload as { candidate: RTCIceCandidateInit };
+        const p = payload as { callId?: string; candidate: RTCIceCandidateInit };
+        if (!p.callId || p.callId !== callRef.current?.id) return;
         const pc = pcRef.current;
         if (!pc) return;
         if (pc.remoteDescription) await pc.addIceCandidate(p.candidate);
         else pendingCandidates.current.push(p.candidate);
       })
-      .on("broadcast", { event: "decline" }, () => {
+      .on("broadcast", { event: "decline" }, ({ payload }) => {
+        const p = payload as { callId?: string };
+        if (!p.callId || p.callId !== callRef.current?.id) return;
         toast.info("Call declined");
         endLocal();
       })
-      .on("broadcast", { event: "busy" }, () => {
+      .on("broadcast", { event: "busy" }, ({ payload }) => {
+        const p = payload as { callId?: string };
+        if (!p.callId || p.callId !== callRef.current?.id) return;
         toast.info("They're on another call");
         endLocal();
       })
-      .on("broadcast", { event: "end" }, () => {
+      .on("broadcast", { event: "end" }, ({ payload }) => {
+        const p = payload as { callId?: string };
+        if (!p.callId || p.callId !== callRef.current?.id) return;
         endLocal();
       })
       .on("broadcast", { event: "mode" }, ({ payload }) => {
-        const p = payload as { mode: AnswerMode; name: string | null };
+        const p = payload as { callId?: string; mode: AnswerMode; name: string | null };
+        if (!p.callId || p.callId !== callRef.current?.id) return;
         setCall((c) =>
           c
             ? {
@@ -397,6 +398,8 @@ pc.onsignalingstatechange = () => {
           .eq("id", user.id)
           .maybeSingle();
 
+        // mark the call as active
+        endedRef.current = false;
         setCall({
           id: row.id,
           peer,
@@ -423,8 +426,12 @@ pc.onsignalingstatechange = () => {
     async (mode: AnswerMode) => {
       const current = callRef.current;
       if (!current || !pendingOffer.current || !user) return;
+      // Ensure the pending offer belongs to this call (ignore stale offers)
+      if (pendingOfferCallId.current && pendingOfferCallId.current !== current.id) return;
       if (autoAnswerTimer.current) clearTimeout(autoAnswerTimer.current);
       try {
+        // mark the call as active
+        endedRef.current = false;
         setCall({ ...current, status: "connecting", mode });
         const pc = buildPeerConnection(current.peer.id, current.id);
         const stream = await getMedia(current.kind);
@@ -444,7 +451,7 @@ pc.onsignalingstatechange = () => {
         for (const c of pendingCandidates.current) await pc.addIceCandidate(c);
         pendingCandidates.current = [];
 
-        await send(current.peer.id, "answer", { answer: localAnswer, mode });
+        await send(current.peer.id, "answer", { callId: current.id, answer: localAnswer, mode });
         await supabase
           .from("call_history")
           .update({
@@ -458,7 +465,7 @@ pc.onsignalingstatechange = () => {
         if (mode === "ai") {
           const { startAiSession } = await import("@/lib/ai/session");
           notice = await startAiSession(current.id);
-          await send(current.peer.id, "mode", { mode: "ai", name: null });
+          await send(current.peer.id, "mode", { callId: current.id, mode: "ai", name: null });
         }
         setCall((c) =>
           c ? { ...c, status: "active", mode, startedAt: Date.now(), aiNotice: notice } : c,
@@ -532,7 +539,7 @@ pc.onsignalingstatechange = () => {
       }
       // The peer connection is untouched: the call never drops during a switch.
       setCall((c) => (c ? { ...c, mode, aiNotice: notice } : c));
-      await send(current.peer.id, "mode", { mode, name: null });
+      await send(current.peer.id, "mode", { callId: current.id, mode, name: null });
     },
     [send],
   );
