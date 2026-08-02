@@ -37,10 +37,9 @@ export const requireSupabaseAuth = createMiddleware({ type: "function" }).server
     const SUPABASE_PUBLISHABLE_KEY = process.env["SUPABASE_PUBLISHABLE_KEY"];
 
     console.log("[Supabase Server] URL:", SUPABASE_URL);
-    console.log(
-      "[Supabase Server] Publishable key exists:",
-      Boolean(SUPABASE_PUBLISHABLE_KEY),
-    );
+    console.log("[Supabase Server] Publishable key exists:", Boolean(SUPABASE_PUBLISHABLE_KEY));
+    console.log("[Supabase Server] URL configured:", Boolean(SUPABASE_URL));
+    console.log("[Supabase Server] Publishable key configured:", Boolean(SUPABASE_PUBLISHABLE_KEY));
 
     if (!SUPABASE_URL || !SUPABASE_PUBLISHABLE_KEY) {
       const missing = [
