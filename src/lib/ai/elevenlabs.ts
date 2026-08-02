@@ -29,37 +29,82 @@ function parseSupabaseResponse<T>(data: SupabaseInvokeResponse): T {
 }
 
 export async function listElevenLabsVoices(): Promise<ElevenLabsVoice[]> {
-  const res = await supabase.functions.invoke("elevenlabs-tts", {
-    method: "GET",
-  });
+  // Try supabase.functions.invoke first; if it doesn't forward a true GET
+  // (some client versions/platforms may POST), fall back to a direct GET
+  // to the Supabase Functions REST endpoint.
+  try {
+    const res = await supabase.functions.invoke("elevenlabs-tts", { method: "GET" });
+    if (!res || res.error) throw new Error(res?.error?.message ?? "invoke GET failed");
 
-  if (res.error) {
-    throw new Error(res.error.message || "Could not load ElevenLabs voices");
+    type VoicesResponse = {
+      voices: Array<{
+        voice_id?: string;
+        id?: string;
+        name?: string;
+        category?: string | null;
+        description?: string | null;
+        voice?: { name?: string };
+      }>;
+    };
+
+    const data = parseSupabaseResponse<VoicesResponse>(res.data);
+    if (!data || !Array.isArray(data.voices))
+      throw new Error("Unexpected ElevenLabs voices response");
+    return data.voices.map((voice) => ({
+      id: voice.voice_id ?? voice.id ?? "",
+      name: voice.name ?? voice.voice?.name ?? "Unknown voice",
+      category: voice.category ?? null,
+      description: voice.description ?? null,
+    }));
+  } catch (invokeErr) {
+    // Fallback to direct GET
+    const SUPABASE_URL =
+      import.meta.env["VITE_SUPABASE_URL"] ||
+      (typeof process !== "undefined" ? process.env["SUPABASE_URL"] : undefined);
+    const KEY =
+      import.meta.env["VITE_SUPABASE_PUBLISHABLE_KEY"] ||
+      (typeof process !== "undefined" ? process.env["SUPABASE_PUBLISHABLE_KEY"] : undefined);
+    if (!SUPABASE_URL || !KEY) throw new Error("Missing Supabase function URL or publishable key");
+    const endpoint = `${SUPABASE_URL.replace(/\/$/, "")}/functions/v1/elevenlabs-tts`;
+    const resp = await fetch(endpoint, {
+      method: "GET",
+      headers: {
+        apikey: KEY,
+        Authorization: `Bearer ${KEY}`,
+        Accept: "application/json",
+      },
+    });
+    const text = await resp.text();
+    if (!resp.ok) {
+      console.error("ElevenLabs voices GET failed", {
+        status: resp.status,
+        body: text,
+        url: endpoint,
+        error: invokeErr,
+      });
+      throw new Error(`Voice list request failed: ${resp.status} ${resp.statusText}`);
+    }
+    let json: unknown;
+    try {
+      json = JSON.parse(text);
+    } catch (e) {
+      throw new Error("Invalid JSON from voice list endpoint");
+    }
+    const data = parseSupabaseResponse<{ voices: Array<Record<string, unknown>> }>(
+      json as Record<string, unknown>,
+    );
+    if (!data || !Array.isArray(data.voices))
+      throw new Error("Unexpected ElevenLabs voices response");
+    return data.voices.map((voice) => {
+      const nestedVoice = (voice["voice"] as Record<string, unknown> | undefined) ?? undefined;
+      return {
+        id: (voice["voice_id"] as string) ?? (voice["id"] as string) ?? "",
+        name: (voice["name"] as string) ?? (nestedVoice?.["name"] as string) ?? "Unknown voice",
+        category: (voice["category"] as string) ?? null,
+        description: (voice["description"] as string) ?? null,
+      };
+    });
   }
-
-  type VoicesResponse = {
-    voices: Array<{
-      voice_id?: string;
-      id?: string;
-      name?: string;
-      category?: string | null;
-      description?: string | null;
-      voice?: { name?: string };
-    }>;
-  };
-
-  const data = parseSupabaseResponse<VoicesResponse>(res.data);
-
-  if (!data || !Array.isArray(data.voices)) {
-    throw new Error("Unexpected ElevenLabs voices response");
-  }
-
-  return data.voices.map((voice) => ({
-    id: voice.voice_id ?? voice.id ?? "",
-    name: voice.name ?? voice.voice?.name ?? "Unknown voice",
-    category: voice.category ?? null,
-    description: voice.description ?? null,
-  }));
 }
 
 export async function generateAiSpeech(text: string, options: GenerateAiSpeechOptions = {}) {
@@ -69,7 +114,8 @@ export async function generateAiSpeech(text: string, options: GenerateAiSpeechOp
   if (!voiceId) {
     const voiceRow = await supabase.from("avatar_voice_settings").select("voice_id").maybeSingle();
     if (voiceRow.error) throw new Error(voiceRow.error.message);
-    voiceId = voiceRow.data?.voice_id ?? null;
+    const voiceIdFromDb = voiceRow.data?.voice_id;
+    voiceId = voiceIdFromDb === null ? undefined : voiceIdFromDb;
   }
 
   if (!voiceId) {

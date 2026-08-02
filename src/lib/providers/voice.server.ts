@@ -100,5 +100,5 @@ export async function synthesizeSpeech(input: {
     throw new Error("No audio returned from ElevenLabs function");
   }
 
-  return { audioBase64: data.audio, mimeType: data.mime };
+  return { audioBase64: data.audio, mimeType: data.mime ?? "audio/mpeg" };
 }
