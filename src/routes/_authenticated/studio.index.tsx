@@ -160,13 +160,15 @@ function Overview() {
 
           <Panel title="Quick actions">
             <div className="flex flex-wrap gap-2">
-              {[
-                ["/studio/avatar", "Configure avatar"],
-                ["/studio/personality", "Edit personality"],
-                ["/studio/knowledge", "Add knowledge"],
-                ["/studio/calls", "AI call settings"],
-                ["/studio/test", "Test your AI"],
-              ].map(([to, label]) => (
+              {(
+                [
+                  ["/studio/avatar", "Configure avatar"],
+                  ["/studio/personality", "Edit personality"],
+                  ["/studio/knowledge", "Add knowledge"],
+                  ["/studio/calls", "AI call settings"],
+                  ["/studio/test", "Test your AI"],
+                ] as const
+              ).map(([to, label]) => (
                 <Button key={to} asChild variant="outline" size="sm">
                   <Link to={to}>
                     {label}
@@ -174,6 +176,7 @@ function Overview() {
                   </Link>
                 </Button>
               ))}
+
             </div>
           </Panel>
         </>

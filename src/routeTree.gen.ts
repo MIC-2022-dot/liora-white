@@ -24,6 +24,7 @@ import { Route as AuthenticatedSettingsRouteImport } from './routes/_authenticat
 import { Route as AuthenticatedStudioRouteImport } from './routes/_authenticated/studio'
 import { Route as AuthenticatedChatsIndexRouteImport } from './routes/_authenticated/chats.index'
 import { Route as AuthenticatedChatsIdRouteImport } from './routes/_authenticated/chats.$id'
+import { Route as AuthenticatedStudioIndexRouteImport } from './routes/_authenticated/studio.index'
 import { Route as AuthenticatedUUsernameRouteImport } from './routes/_authenticated/u.$username'
 
 const IndexRoute = IndexRouteImport.update({
@@ -101,6 +102,12 @@ const AuthenticatedChatsIdRoute = AuthenticatedChatsIdRouteImport.update({
   path: '/$id',
   getParentRoute: () => AuthenticatedChatsRoute,
 } as any)
+const AuthenticatedStudioIndexRoute =
+  AuthenticatedStudioIndexRouteImport.update({
+    id: '/',
+    path: '/',
+    getParentRoute: () => AuthenticatedStudioRoute,
+  } as any)
 const AuthenticatedUUsernameRoute = AuthenticatedUUsernameRouteImport.update({
   id: '/u/$username',
   path: '/u/$username',
@@ -119,10 +126,11 @@ export interface FileRoutesByFullPath {
   '/onboarding': typeof AuthenticatedOnboardingRoute
   '/profile': typeof AuthenticatedProfileRoute
   '/settings': typeof AuthenticatedSettingsRoute
-  '/studio': typeof AuthenticatedStudioRoute
+  '/studio': typeof AuthenticatedStudioRouteWithChildren
   '/chats/$id': typeof AuthenticatedChatsIdRoute
   '/u/$username': typeof AuthenticatedUUsernameRoute
   '/chats/': typeof AuthenticatedChatsIndexRoute
+  '/studio/': typeof AuthenticatedStudioIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -135,10 +143,10 @@ export interface FileRoutesByTo {
   '/onboarding': typeof AuthenticatedOnboardingRoute
   '/profile': typeof AuthenticatedProfileRoute
   '/settings': typeof AuthenticatedSettingsRoute
-  '/studio': typeof AuthenticatedStudioRoute
   '/chats/$id': typeof AuthenticatedChatsIdRoute
   '/u/$username': typeof AuthenticatedUUsernameRoute
   '/chats': typeof AuthenticatedChatsIndexRoute
+  '/studio': typeof AuthenticatedStudioIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -154,10 +162,11 @@ export interface FileRoutesById {
   '/_authenticated/onboarding': typeof AuthenticatedOnboardingRoute
   '/_authenticated/profile': typeof AuthenticatedProfileRoute
   '/_authenticated/settings': typeof AuthenticatedSettingsRoute
-  '/_authenticated/studio': typeof AuthenticatedStudioRoute
+  '/_authenticated/studio': typeof AuthenticatedStudioRouteWithChildren
   '/_authenticated/chats/$id': typeof AuthenticatedChatsIdRoute
   '/_authenticated/u/$username': typeof AuthenticatedUUsernameRoute
   '/_authenticated/chats/': typeof AuthenticatedChatsIndexRoute
+  '/_authenticated/studio/': typeof AuthenticatedStudioIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -177,6 +186,7 @@ export interface FileRouteTypes {
     | '/chats/$id'
     | '/u/$username'
     | '/chats/'
+    | '/studio/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -189,10 +199,10 @@ export interface FileRouteTypes {
     | '/onboarding'
     | '/profile'
     | '/settings'
-    | '/studio'
     | '/chats/$id'
     | '/u/$username'
     | '/chats'
+    | '/studio'
   id:
     | '__root__'
     | '/'
@@ -211,6 +221,7 @@ export interface FileRouteTypes {
     | '/_authenticated/chats/$id'
     | '/_authenticated/u/$username'
     | '/_authenticated/chats/'
+    | '/_authenticated/studio/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -328,6 +339,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedChatsIdRouteImport
       parentRoute: typeof AuthenticatedChatsRoute
     }
+    '/_authenticated/studio/': {
+      id: '/_authenticated/studio/'
+      path: '/'
+      fullPath: '/studio/'
+      preLoaderRoute: typeof AuthenticatedStudioIndexRouteImport
+      parentRoute: typeof AuthenticatedStudioRoute
+    }
     '/_authenticated/u/$username': {
       id: '/_authenticated/u/$username'
       path: '/u/$username'
@@ -351,6 +369,17 @@ const AuthenticatedChatsRouteChildren: AuthenticatedChatsRouteChildren = {
 const AuthenticatedChatsRouteWithChildren =
   AuthenticatedChatsRoute._addFileChildren(AuthenticatedChatsRouteChildren)
 
+interface AuthenticatedStudioRouteChildren {
+  AuthenticatedStudioIndexRoute: typeof AuthenticatedStudioIndexRoute
+}
+
+const AuthenticatedStudioRouteChildren: AuthenticatedStudioRouteChildren = {
+  AuthenticatedStudioIndexRoute: AuthenticatedStudioIndexRoute,
+}
+
+const AuthenticatedStudioRouteWithChildren =
+  AuthenticatedStudioRoute._addFileChildren(AuthenticatedStudioRouteChildren)
+
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedCallsRoute: typeof AuthenticatedCallsRoute
   AuthenticatedChatsRoute: typeof AuthenticatedChatsRouteWithChildren
@@ -359,7 +388,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedOnboardingRoute: typeof AuthenticatedOnboardingRoute
   AuthenticatedProfileRoute: typeof AuthenticatedProfileRoute
   AuthenticatedSettingsRoute: typeof AuthenticatedSettingsRoute
-  AuthenticatedStudioRoute: typeof AuthenticatedStudioRoute
+  AuthenticatedStudioRoute: typeof AuthenticatedStudioRouteWithChildren
   AuthenticatedUUsernameRoute: typeof AuthenticatedUUsernameRoute
 }
 
@@ -371,7 +400,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedOnboardingRoute: AuthenticatedOnboardingRoute,
   AuthenticatedProfileRoute: AuthenticatedProfileRoute,
   AuthenticatedSettingsRoute: AuthenticatedSettingsRoute,
-  AuthenticatedStudioRoute: AuthenticatedStudioRoute,
+  AuthenticatedStudioRoute: AuthenticatedStudioRouteWithChildren,
   AuthenticatedUUsernameRoute: AuthenticatedUUsernameRoute,
 }
 
