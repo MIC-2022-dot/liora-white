@@ -136,7 +136,7 @@ export function CallProvider({ children }: { children: ReactNode }) {
         const [stream] = e.streams;
         if (stream) setRemoteStream(stream);
       };
-      let disconnectTimer: ReturnType<typeof setTimeout> | null = null;
+  let disconnectTimer: ReturnType<typeof setTimeout> | null = null;
 
 pc.onconnectionstatechange = () => {
   const state = pc.connectionState;
@@ -149,6 +149,8 @@ pc.onconnectionstatechange = () => {
       disconnectTimer = null;
     }
 
+    console.log("[LIORA WebRTC] Call connection established");
+
     setCall((c) =>
       c
         ? {
@@ -158,22 +160,31 @@ pc.onconnectionstatechange = () => {
           }
         : c,
     );
+
+    return;
+  }
+
+  if (state === "connecting") {
+    console.log("[LIORA WebRTC] Connecting...");
+    return;
   }
 
   if (state === "failed") {
-    console.warn("[LIORA WebRTC] Connection failed");
+    console.error("[LIORA WebRTC] Peer connection FAILED");
 
     if (disconnectTimer) {
       clearTimeout(disconnectTimer);
       disconnectTimer = null;
     }
 
+    // Only end the call when WebRTC explicitly reports FAILED.
     endLocal();
+    return;
   }
 
   if (state === "disconnected") {
     console.warn(
-      "[LIORA WebRTC] Temporarily disconnected — waiting for recovery",
+      "[LIORA WebRTC] Temporarily disconnected — allowing recovery",
     );
 
     if (disconnectTimer) {
@@ -183,21 +194,55 @@ pc.onconnectionstatechange = () => {
     disconnectTimer = setTimeout(() => {
       disconnectTimer = null;
 
-      if (pc.connectionState === "disconnected") {
-        console.warn(
-          "[LIORA WebRTC] Connection did not recover after 10 seconds",
+      const currentState = pc.connectionState;
+
+      console.log(
+        "[LIORA WebRTC] Disconnection check:",
+        currentState,
+      );
+
+      // IMPORTANT:
+      // Do not end the call merely because it stayed disconnected.
+      // ICE may still recover.
+      if (currentState === "failed") {
+        console.error(
+          "[LIORA WebRTC] Connection became FAILED after disconnect",
         );
         endLocal();
       }
-    }, 10000);
+    }, 15000);
+
+    return;
   }
 };
+
 pc.oniceconnectionstatechange = () => {
   console.log(
     "[LIORA WebRTC] ICE connection state:",
     pc.iceConnectionState,
   );
+
+  if (pc.iceConnectionState === "connected") {
+    console.log("[LIORA WebRTC] ICE connected");
+  }
+
+  if (pc.iceConnectionState === "completed") {
+    console.log("[LIORA WebRTC] ICE completed");
+  }
+
+  if (pc.iceConnectionState === "checking") {
+    console.log("[LIORA WebRTC] ICE checking...");
+  }
+
+  if (pc.iceConnectionState === "disconnected") {
+    console.warn("[LIORA WebRTC] ICE temporarily disconnected");
+  }
+
+  if (pc.iceConnectionState === "failed") {
+    console.error("[LIORA WebRTC] ICE FAILED");
+  }
 };
+
 pc.onsignalingstatechange = () => {
   console.log(
     "[LIORA WebRTC] Signaling state:",
