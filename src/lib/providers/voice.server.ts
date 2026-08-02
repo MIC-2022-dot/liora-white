@@ -5,17 +5,7 @@
  * voice provider. Keys are only ever read on the server.
  */
 
-export type VoiceOption = { id: string; name: string; description: string };
-
-/** Curated voice slots the owner can assign; ids map to the provider once connected. */
-export const VOICE_CATALOG: VoiceOption[] = [
-  { id: "warm-low", name: "Warm — low", description: "Calm, grounded, unhurried" },
-  { id: "warm-mid", name: "Warm — mid", description: "Friendly and conversational" },
-  { id: "bright", name: "Bright", description: "Light, quick, expressive" },
-  { id: "soft", name: "Soft", description: "Gentle, close-mic, intimate" },
-  { id: "neutral", name: "Neutral", description: "Even and professional" },
-  { id: "deep", name: "Deep", description: "Resonant and slow" },
-];
+export { VOICE_CATALOG, type VoiceOption } from "@/lib/voice-catalog";
 
 export function voiceProviderStatus() {
   const key = process.env["VOICE_PROVIDER_API_KEY"];
