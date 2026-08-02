@@ -1,11 +1,16 @@
 // Supabase Edge Function: ElevenLabs TTS proxy
 // Reads ELEVENLABS_API_KEY from environment (Supabase secret) and forwards voice requests.
-import { serve } from "std/server";
+import { serve } from "https://deno.land/std@0.224.0/http/server.ts";
 
 serve(async (req) => {
   try {
     const env = Deno.env;
-    const key = env.get("ELEVENLABS_API_KEY") || env.get("ELEVENLABS_KEY") || null;
+    const key = Deno.env.get("ELEVENLABS_API_KEY");
+
+console.log(
+  "[ElevenLabs]",
+  key ? "API key found" : "API key NOT found",
+);
     if (!key) {
       return new Response(
         JSON.stringify({ error: "Missing server configuration: ELEVENLABS_API_KEY" }),
