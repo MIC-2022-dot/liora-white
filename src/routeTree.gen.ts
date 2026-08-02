@@ -25,6 +25,10 @@ import { Route as AuthenticatedStudioRouteImport } from './routes/_authenticated
 import { Route as AuthenticatedChatsIndexRouteImport } from './routes/_authenticated/chats.index'
 import { Route as AuthenticatedChatsIdRouteImport } from './routes/_authenticated/chats.$id'
 import { Route as AuthenticatedStudioIndexRouteImport } from './routes/_authenticated/studio.index'
+import { Route as AuthenticatedStudioAvatarRouteImport } from './routes/_authenticated/studio.avatar'
+import { Route as AuthenticatedStudioInstructionsRouteImport } from './routes/_authenticated/studio.instructions'
+import { Route as AuthenticatedStudioKnowledgeRouteImport } from './routes/_authenticated/studio.knowledge'
+import { Route as AuthenticatedStudioPersonalityRouteImport } from './routes/_authenticated/studio.personality'
 import { Route as AuthenticatedUUsernameRouteImport } from './routes/_authenticated/u.$username'
 
 const IndexRoute = IndexRouteImport.update({
@@ -108,6 +112,30 @@ const AuthenticatedStudioIndexRoute =
     path: '/',
     getParentRoute: () => AuthenticatedStudioRoute,
   } as any)
+const AuthenticatedStudioAvatarRoute =
+  AuthenticatedStudioAvatarRouteImport.update({
+    id: '/avatar',
+    path: '/avatar',
+    getParentRoute: () => AuthenticatedStudioRoute,
+  } as any)
+const AuthenticatedStudioInstructionsRoute =
+  AuthenticatedStudioInstructionsRouteImport.update({
+    id: '/instructions',
+    path: '/instructions',
+    getParentRoute: () => AuthenticatedStudioRoute,
+  } as any)
+const AuthenticatedStudioKnowledgeRoute =
+  AuthenticatedStudioKnowledgeRouteImport.update({
+    id: '/knowledge',
+    path: '/knowledge',
+    getParentRoute: () => AuthenticatedStudioRoute,
+  } as any)
+const AuthenticatedStudioPersonalityRoute =
+  AuthenticatedStudioPersonalityRouteImport.update({
+    id: '/personality',
+    path: '/personality',
+    getParentRoute: () => AuthenticatedStudioRoute,
+  } as any)
 const AuthenticatedUUsernameRoute = AuthenticatedUUsernameRouteImport.update({
   id: '/u/$username',
   path: '/u/$username',
@@ -128,6 +156,10 @@ export interface FileRoutesByFullPath {
   '/settings': typeof AuthenticatedSettingsRoute
   '/studio': typeof AuthenticatedStudioRouteWithChildren
   '/chats/$id': typeof AuthenticatedChatsIdRoute
+  '/studio/avatar': typeof AuthenticatedStudioAvatarRoute
+  '/studio/instructions': typeof AuthenticatedStudioInstructionsRoute
+  '/studio/knowledge': typeof AuthenticatedStudioKnowledgeRoute
+  '/studio/personality': typeof AuthenticatedStudioPersonalityRoute
   '/u/$username': typeof AuthenticatedUUsernameRoute
   '/chats/': typeof AuthenticatedChatsIndexRoute
   '/studio/': typeof AuthenticatedStudioIndexRoute
@@ -144,6 +176,10 @@ export interface FileRoutesByTo {
   '/profile': typeof AuthenticatedProfileRoute
   '/settings': typeof AuthenticatedSettingsRoute
   '/chats/$id': typeof AuthenticatedChatsIdRoute
+  '/studio/avatar': typeof AuthenticatedStudioAvatarRoute
+  '/studio/instructions': typeof AuthenticatedStudioInstructionsRoute
+  '/studio/knowledge': typeof AuthenticatedStudioKnowledgeRoute
+  '/studio/personality': typeof AuthenticatedStudioPersonalityRoute
   '/u/$username': typeof AuthenticatedUUsernameRoute
   '/chats': typeof AuthenticatedChatsIndexRoute
   '/studio': typeof AuthenticatedStudioIndexRoute
@@ -164,6 +200,10 @@ export interface FileRoutesById {
   '/_authenticated/settings': typeof AuthenticatedSettingsRoute
   '/_authenticated/studio': typeof AuthenticatedStudioRouteWithChildren
   '/_authenticated/chats/$id': typeof AuthenticatedChatsIdRoute
+  '/_authenticated/studio/avatar': typeof AuthenticatedStudioAvatarRoute
+  '/_authenticated/studio/instructions': typeof AuthenticatedStudioInstructionsRoute
+  '/_authenticated/studio/knowledge': typeof AuthenticatedStudioKnowledgeRoute
+  '/_authenticated/studio/personality': typeof AuthenticatedStudioPersonalityRoute
   '/_authenticated/u/$username': typeof AuthenticatedUUsernameRoute
   '/_authenticated/chats/': typeof AuthenticatedChatsIndexRoute
   '/_authenticated/studio/': typeof AuthenticatedStudioIndexRoute
@@ -184,6 +224,10 @@ export interface FileRouteTypes {
     | '/settings'
     | '/studio'
     | '/chats/$id'
+    | '/studio/avatar'
+    | '/studio/instructions'
+    | '/studio/knowledge'
+    | '/studio/personality'
     | '/u/$username'
     | '/chats/'
     | '/studio/'
@@ -200,6 +244,10 @@ export interface FileRouteTypes {
     | '/profile'
     | '/settings'
     | '/chats/$id'
+    | '/studio/avatar'
+    | '/studio/instructions'
+    | '/studio/knowledge'
+    | '/studio/personality'
     | '/u/$username'
     | '/chats'
     | '/studio'
@@ -219,6 +267,10 @@ export interface FileRouteTypes {
     | '/_authenticated/settings'
     | '/_authenticated/studio'
     | '/_authenticated/chats/$id'
+    | '/_authenticated/studio/avatar'
+    | '/_authenticated/studio/instructions'
+    | '/_authenticated/studio/knowledge'
+    | '/_authenticated/studio/personality'
     | '/_authenticated/u/$username'
     | '/_authenticated/chats/'
     | '/_authenticated/studio/'
@@ -346,6 +398,34 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedStudioIndexRouteImport
       parentRoute: typeof AuthenticatedStudioRoute
     }
+    '/_authenticated/studio/avatar': {
+      id: '/_authenticated/studio/avatar'
+      path: '/avatar'
+      fullPath: '/studio/avatar'
+      preLoaderRoute: typeof AuthenticatedStudioAvatarRouteImport
+      parentRoute: typeof AuthenticatedStudioRoute
+    }
+    '/_authenticated/studio/instructions': {
+      id: '/_authenticated/studio/instructions'
+      path: '/instructions'
+      fullPath: '/studio/instructions'
+      preLoaderRoute: typeof AuthenticatedStudioInstructionsRouteImport
+      parentRoute: typeof AuthenticatedStudioRoute
+    }
+    '/_authenticated/studio/knowledge': {
+      id: '/_authenticated/studio/knowledge'
+      path: '/knowledge'
+      fullPath: '/studio/knowledge'
+      preLoaderRoute: typeof AuthenticatedStudioKnowledgeRouteImport
+      parentRoute: typeof AuthenticatedStudioRoute
+    }
+    '/_authenticated/studio/personality': {
+      id: '/_authenticated/studio/personality'
+      path: '/personality'
+      fullPath: '/studio/personality'
+      preLoaderRoute: typeof AuthenticatedStudioPersonalityRouteImport
+      parentRoute: typeof AuthenticatedStudioRoute
+    }
     '/_authenticated/u/$username': {
       id: '/_authenticated/u/$username'
       path: '/u/$username'
@@ -370,10 +450,18 @@ const AuthenticatedChatsRouteWithChildren =
   AuthenticatedChatsRoute._addFileChildren(AuthenticatedChatsRouteChildren)
 
 interface AuthenticatedStudioRouteChildren {
+  AuthenticatedStudioAvatarRoute: typeof AuthenticatedStudioAvatarRoute
+  AuthenticatedStudioInstructionsRoute: typeof AuthenticatedStudioInstructionsRoute
+  AuthenticatedStudioKnowledgeRoute: typeof AuthenticatedStudioKnowledgeRoute
+  AuthenticatedStudioPersonalityRoute: typeof AuthenticatedStudioPersonalityRoute
   AuthenticatedStudioIndexRoute: typeof AuthenticatedStudioIndexRoute
 }
 
 const AuthenticatedStudioRouteChildren: AuthenticatedStudioRouteChildren = {
+  AuthenticatedStudioAvatarRoute: AuthenticatedStudioAvatarRoute,
+  AuthenticatedStudioInstructionsRoute: AuthenticatedStudioInstructionsRoute,
+  AuthenticatedStudioKnowledgeRoute: AuthenticatedStudioKnowledgeRoute,
+  AuthenticatedStudioPersonalityRoute: AuthenticatedStudioPersonalityRoute,
   AuthenticatedStudioIndexRoute: AuthenticatedStudioIndexRoute,
 }
 
