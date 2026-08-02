@@ -20,6 +20,13 @@ export async function getOrCreateConversation(myId: string, otherUserId: string)
     if (existing) return existing;
   }
 
+  const {
+    data: { user: authUser },
+  } = await supabase.auth.getUser();
+
+  console.log("myId:", myId);
+  console.log("authUser.id:", authUser?.id);
+
   const { data: convo, error } = await supabase
     .from("conversations")
     .insert({ created_by: myId })
