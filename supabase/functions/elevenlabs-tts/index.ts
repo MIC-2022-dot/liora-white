@@ -82,11 +82,10 @@ console.log(
     const resp = await fetch(url, {
       method: "POST",
       headers: {
-        "Content-Type": "application/json",
-        "xi-api-key": key,
-        Authorization: `Bearer ${key}`,
-        Accept: "audio/mpeg",
-      },
+  "Content-Type": "application/json",
+  "xi-api-key": key,
+  Accept: "audio/mpeg",
+},
       body: JSON.stringify(payload),
     });
 
