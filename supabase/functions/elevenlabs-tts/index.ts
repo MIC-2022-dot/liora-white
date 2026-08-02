@@ -2,22 +2,42 @@
 // Reads ELEVENLABS_API_KEY from environment (Supabase secret) and forwards voice requests.
 import { serve } from "https://deno.land/std@0.224.0/http/server.ts";
 
+const CORS_HEADERS = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Headers": "Authorization,apikey,Content-Type",
+  "Access-Control-Allow-Methods": "GET,POST,OPTIONS",
+  "Access-Control-Max-Age": "86400",
+};
+
+function jsonResponse(body: unknown, status = 200) {
+  return new Response(JSON.stringify(body), {
+    status,
+    headers: {
+      "Content-Type": "application/json",
+      ...CORS_HEADERS,
+    },
+  });
+}
+
+function optionsResponse() {
+  return new Response(null, {
+    status: 204,
+    headers: CORS_HEADERS,
+  });
+}
+
 serve(async (req) => {
   try {
+    if (req.method === "OPTIONS") {
+      return optionsResponse();
+    }
+
     const env = Deno.env;
     const key = Deno.env.get("ELEVENLABS_API_KEY");
 
-console.log(
-  "[ElevenLabs]",
-  key ? "API key found" : "API key NOT found",
-);
+    console.log("[ElevenLabs]", key ? "API key found" : "API key NOT found");
     if (!key) {
-      return new Response(
-        JSON.stringify({ error: "Missing server configuration: ELEVENLABS_API_KEY" }),
-        {
-          status: 500,
-        },
-      );
+      return jsonResponse({ error: "Missing server configuration: ELEVENLABS_API_KEY" }, 500);
     }
 
     if (req.method === "GET") {
@@ -30,25 +50,28 @@ console.log(
       });
       if (!resp.ok) {
         const textBody = await resp.text();
-        return new Response(
-          JSON.stringify({
+        return jsonResponse(
+          {
             error: "ElevenLabs list voices error",
             status: resp.status,
             body: textBody,
-          }),
-          { status: 502 },
+          },
+          502,
         );
       }
       const json = await resp.json();
       const voices = Array.isArray(json.voices) ? json.voices : json;
       return new Response(JSON.stringify({ voices }), {
         status: 200,
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          ...CORS_HEADERS,
+        },
       });
     }
 
     if (req.method !== "POST") {
-      return new Response(JSON.stringify({ error: "Only GET and POST allowed" }), { status: 405 });
+      return jsonResponse({ error: "Only GET and POST allowed" }, 405);
     }
 
     type ElevenLabsRequestBody = {
@@ -91,11 +114,9 @@ console.log(
 
     if (!resp.ok) {
       const textBody = await resp.text();
-      return new Response(
-        JSON.stringify({ error: "ElevenLabs error", status: resp.status, body: textBody }),
-        {
-          status: 502,
-        },
+      return jsonResponse(
+        { error: "ElevenLabs error", status: resp.status, body: textBody },
+        502,
       );
     }
 
@@ -111,10 +132,13 @@ console.log(
 
     return new Response(JSON.stringify({ audio: base64, mime: "audio/mpeg" }), {
       status: 200,
-      headers: { "Content-Type": "application/json" },
+      headers: {
+        "Content-Type": "application/json",
+        ...CORS_HEADERS,
+      },
     });
   } catch (err) {
     console.error("ElevenLabs function error:", err);
-    return new Response(JSON.stringify({ error: "Internal server error" }), { status: 500 });
+    return jsonResponse({ error: "Internal server error" }, 500);
   }
 });

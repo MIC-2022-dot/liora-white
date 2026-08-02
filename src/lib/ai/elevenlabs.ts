@@ -34,7 +34,14 @@ export async function listElevenLabsVoices(): Promise<ElevenLabsVoice[]> {
   // to the Supabase Functions REST endpoint.
   try {
     const res = await supabase.functions.invoke("elevenlabs-tts", { method: "GET" });
-    if (!res || res.error) throw new Error(res?.error?.message ?? "invoke GET failed");
+    if (!res || res.error) {
+      console.error("Supabase function invoke error", {
+        data: res?.data,
+        error: res?.error,
+        invokeError: res?.error?.message,
+      });
+      throw new Error(res?.error?.message ?? "invoke GET failed");
+    }
 
     type VoicesResponse = {
       voices: Array<{
