@@ -16,7 +16,7 @@ export const studioProviderStatus = createServerFn({ method: "GET" })
     const { avatarProviderStatus } = await import("@/lib/providers/avatar.server");
     const { voiceProviderStatus } = await import("@/lib/providers/voice.server");
     const avatar = avatarProviderStatus();
-    const voice = voiceProviderStatus();
+    const voice = await voiceProviderStatus();
     return {
       avatar: avatar.configured
         ? { configured: true as const, provider: avatar.provider, message: "" }
@@ -41,9 +41,8 @@ export const saveAvatarSource = createServerFn({ method: "POST" })
     const { assertStudio } = await import("@/lib/studio-guard.server");
     await assertStudio(context);
     if (!data.path.startsWith(`${context.userId}/`)) throw new Error("Invalid upload path");
-    const { analyseIdentityPhoto, avatarProviderStatus } = await import(
-      "@/lib/providers/avatar.server"
-    );
+    const { analyseIdentityPhoto, avatarProviderStatus } =
+      await import("@/lib/providers/avatar.server");
     const analysis = analyseIdentityPhoto({
       bytes: data.bytes,
       ...(data.width !== undefined ? { width: data.width } : {}),
@@ -87,7 +86,6 @@ export const clearAvatarSource = createServerFn({ method: "POST" })
     if (error) throw new Error(error.message);
     return { ok: true };
   });
-
 
 export const startAvatarCallSession = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
@@ -150,7 +148,7 @@ export const previewVoice = createServerFn({ method: "POST" })
     const { assertStudio } = await import("@/lib/studio-guard.server");
     await assertStudio(context);
     const { synthesizeSpeech, voiceProviderStatus } = await import("@/lib/providers/voice.server");
-    const status = voiceProviderStatus();
+    const status = await voiceProviderStatus();
     if (!status.configured) return { configured: false as const, message: status.message };
     const { data: voice } = await context.supabase
       .from("avatar_voice_settings")
@@ -220,7 +218,8 @@ export const avatarReply = createServerFn({ method: "POST" })
       personality?.should_avoid && `Never do this: ${personality.should_avoid}`,
       personality?.conversation_preferences &&
         `Conversation preferences: ${personality.conversation_preferences}`,
-      instructions?.system_instructions && `Owner instructions: ${instructions.system_instructions}`,
+      instructions?.system_instructions &&
+        `Owner instructions: ${instructions.system_instructions}`,
       instructions?.response_rules && `Response rules: ${instructions.response_rules}`,
       instructions?.restrictions && `Restrictions: ${instructions.restrictions}`,
       instructions?.situational_behavior &&

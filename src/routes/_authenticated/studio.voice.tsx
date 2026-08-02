@@ -4,8 +4,9 @@ import { Loader2, Play } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "@/lib/auth";
 import { supabase } from "@/integrations/supabase/client";
+import { listElevenLabsVoices } from "@/lib/ai/elevenlabs";
 import { previewVoice, studioProviderStatus } from "@/lib/studio.functions";
-import { EMOTIONS, VOICE_CATALOG } from "@/lib/voice-catalog";
+import { EMOTIONS } from "@/lib/voice-catalog";
 import { Field, Panel, ProviderNotice, StatusPill, WorkspaceHeader } from "@/components/studio/ui";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -38,21 +39,33 @@ export const Route = createFileRoute("/_authenticated/studio/voice")({
   component: VoiceWorkspace,
 });
 
+type ElevenLabsVoiceOption = {
+  id: string;
+  name: string;
+  category?: string | null;
+  description?: string | null;
+};
+
 function VoiceWorkspace() {
   const { user } = useAuth();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [previewing, setPreviewing] = useState(false);
+  const [voiceLoading, setVoiceLoading] = useState(false);
+  const [voiceError, setVoiceError] = useState<string | null>(null);
   const [voiceId, setVoiceId] = useState<string | null>(null);
   const [speed, setSpeed] = useState(1);
   const [pitch, setPitch] = useState(1);
   const [emotion, setEmotion] = useState("neutral");
   const [sample, setSample] = useState("Hey, it's me — I can't pick up right now, but I'm here.");
   const [provider, setProvider] = useState<{ configured: boolean; message: string } | null>(null);
+  const [availableVoices, setAvailableVoices] = useState<ElevenLabsVoiceOption[]>([]);
 
   useEffect(() => {
     if (!user) return;
+
     void (async () => {
+      setLoading(true);
       const { data } = await supabase
         .from("avatar_voice_settings")
         .select("*")
@@ -66,15 +79,31 @@ function VoiceWorkspace() {
       }
       setLoading(false);
     })();
+
     void studioProviderStatus()
       .then((s) => setProvider({ configured: s.voice.configured, message: s.voice.message }))
       .catch(() => setProvider(null));
   }, [user]);
 
+  useEffect(() => {
+    if (!user) return;
+    setVoiceLoading(true);
+    setVoiceError(null);
+    void listElevenLabsVoices()
+      .then((voices) => {
+        setAvailableVoices(voices);
+      })
+      .catch((err) => {
+        setVoiceError(err instanceof Error ? err.message : "Could not load voices");
+      })
+      .finally(() => setVoiceLoading(false));
+  }, [user]);
+
   async function save() {
     if (!user) return;
     setSaving(true);
-    const selected = VOICE_CATALOG.find((v) => v.id === voiceId);
+
+    const selected = availableVoices.find((v) => v.id === voiceId);
     const { error } = await supabase.from("avatar_voice_settings").upsert({
       user_id: user.id,
       voice_id: voiceId,
@@ -84,6 +113,7 @@ function VoiceWorkspace() {
       emotion,
       updated_at: new Date().toISOString(),
     });
+
     setSaving(false);
     if (error) toast.error("Could not save voice settings");
     else toast.success("Voice settings saved");
@@ -106,6 +136,8 @@ function VoiceWorkspace() {
     }
   }
 
+  const voiceOptions = availableVoices.length > 0 ? availableVoices : [];
+
   return (
     <div className="space-y-6">
       <WorkspaceHeader
@@ -120,7 +152,7 @@ function VoiceWorkspace() {
           )
         }
         actions={
-          <Button onClick={() => void save()} disabled={saving || loading}>
+          <Button onClick={() => void save()} disabled={saving || loading || voiceLoading}>
             {saving && <Loader2 className="size-4 animate-spin" />} Save
           </Button>
         }
@@ -141,26 +173,46 @@ function VoiceWorkspace() {
             />
           </Panel>
 
-          <Panel title="Voice profile" hint="Pick the slot that best matches how you sound.">
-            <div className="grid gap-2 sm:grid-cols-2">
-              {VOICE_CATALOG.map((v) => (
-                <button
-                  key={v.id}
-                  type="button"
-                  onClick={() => setVoiceId(v.id)}
-                  aria-pressed={voiceId === v.id}
-                  className={cn(
-                    "rounded-lg border px-4 py-3 text-left transition-colors outline-none focus-visible:ring-2 focus-visible:ring-ring",
-                    voiceId === v.id
-                      ? "border-primary bg-primary/5"
-                      : "border-border hover:border-primary/40",
-                  )}
-                >
-                  <p className="text-sm font-medium">{v.name}</p>
-                  <p className="mt-0.5 text-xs text-muted-foreground">{v.description}</p>
-                </button>
-              ))}
-            </div>
+          <Panel
+            title="ElevenLabs voices"
+            hint="Browse available ElevenLabs voices and choose the one you want your AI to speak with."
+          >
+            {voiceLoading ? (
+              <div className="space-y-3">
+                <Skeleton className="h-14 w-full rounded-xl" />
+                <Skeleton className="h-14 w-full rounded-xl" />
+                <Skeleton className="h-14 w-full rounded-xl" />
+              </div>
+            ) : voiceError ? (
+              <p className="text-sm text-muted-foreground">{voiceError}</p>
+            ) : voiceOptions.length === 0 ? (
+              <p className="text-sm text-muted-foreground">
+                No ElevenLabs voices are available. If your ElevenLabs provider is connected, try
+                refreshing the page.
+              </p>
+            ) : (
+              <div className="grid gap-2 sm:grid-cols-2">
+                {voiceOptions.map((voice) => (
+                  <button
+                    key={voice.id}
+                    type="button"
+                    onClick={() => setVoiceId(voice.id)}
+                    aria-pressed={voiceId === voice.id}
+                    className={cn(
+                      "rounded-lg border px-4 py-3 text-left transition-colors outline-none focus-visible:ring-2 focus-visible:ring-ring",
+                      voiceId === voice.id
+                        ? "border-primary bg-primary/5"
+                        : "border-border hover:border-primary/40",
+                    )}
+                  >
+                    <p className="text-sm font-medium">{voice.name}</p>
+                    <p className="mt-0.5 text-xs text-muted-foreground">
+                      {voice.category ?? voice.description ?? "ElevenLabs voice"}
+                    </p>
+                  </button>
+                ))}
+              </div>
+            )}
           </Panel>
 
           <Panel title="Delivery">
