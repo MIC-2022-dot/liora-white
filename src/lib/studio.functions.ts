@@ -7,6 +7,88 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
  * decides authorization.
  */
 
+/** Real provider connection state for avatar streaming and voice synthesis. */
+export const studioProviderStatus = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const { assertStudio } = await import("@/lib/studio-guard.server");
+    await assertStudio(context);
+    const { avatarProviderStatus } = await import("@/lib/providers/avatar.server");
+    const { voiceProviderStatus } = await import("@/lib/providers/voice.server");
+    const avatar = avatarProviderStatus();
+    const voice = voiceProviderStatus();
+    return {
+      avatar: avatar.configured
+        ? { configured: true as const, provider: avatar.provider, message: "" }
+        : { configured: false as const, provider: null, message: avatar.message },
+      voice: voice.configured
+        ? { configured: true as const, provider: voice.provider, message: "" }
+        : { configured: false as const, provider: null, message: voice.message },
+    };
+  });
+
+/**
+ * Registers a newly uploaded identity photo as the avatar source. The image
+ * itself stays in the private `studio-media` bucket; only its path is stored.
+ */
+export const saveAvatarSource = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: { path: string; bytes: number; width?: number; height?: number }) => {
+    if (!input?.path) throw new Error("path is required");
+    return input;
+  })
+  .handler(async ({ data, context }) => {
+    const { assertStudio } = await import("@/lib/studio-guard.server");
+    await assertStudio(context);
+    if (!data.path.startsWith(`${context.userId}/`)) throw new Error("Invalid upload path");
+    const { analyseIdentityPhoto, avatarProviderStatus } = await import(
+      "@/lib/providers/avatar.server"
+    );
+    const analysis = analyseIdentityPhoto({
+      bytes: data.bytes,
+      ...(data.width !== undefined ? { width: data.width } : {}),
+      ...(data.height !== undefined ? { height: data.height } : {}),
+    });
+    const provider = avatarProviderStatus();
+
+    const { error } = await context.supabase.from("avatar_profiles").upsert({
+      user_id: context.userId,
+      source_image_url: data.path,
+      quality_score: analysis.quality_score,
+      status: provider.configured ? "ready" : "source_ready",
+      provider: provider.configured ? provider.provider : null,
+      updated_at: new Date().toISOString(),
+    });
+    if (error) throw new Error(error.message);
+    return analysis;
+  });
+
+/** Removes the identity photo from storage and clears the avatar profile. */
+export const clearAvatarSource = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const { assertStudio } = await import("@/lib/studio-guard.server");
+    await assertStudio(context);
+    const { data: existing } = await context.supabase
+      .from("avatar_profiles")
+      .select("source_image_url")
+      .eq("user_id", context.userId)
+      .maybeSingle();
+    if (existing?.source_image_url) {
+      await context.supabase.storage.from("studio-media").remove([existing.source_image_url]);
+    }
+    const { error } = await context.supabase.from("avatar_profiles").upsert({
+      user_id: context.userId,
+      source_image_url: null,
+      quality_score: null,
+      status: "setup_required",
+      updated_at: new Date().toISOString(),
+    });
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
+
 export const startAvatarCallSession = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: { callId: string }) => {
