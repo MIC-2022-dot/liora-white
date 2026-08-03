@@ -6,6 +6,7 @@ import { useAuth } from "@/lib/auth";
 import { Wordmark } from "@/components/liora/wordmark";
 import { UserAvatar } from "@/components/liora/user-avatar";
 import { useUnreadNotifications } from "@/hooks/use-notifications";
+import { useChatAutopilot } from "@/lib/ai/chat-autopilot";
 
 const NAV = [
   { to: "/chats", label: "Chats", icon: MessageCircle },
