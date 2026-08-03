@@ -18,7 +18,7 @@ export function requireGeminiApiKey(apiKey?: string) {
 }
 
 export function getGeminiModelName(model?: string) {
-  return model?.trim() || process.env["GEMINI_MODEL"]?.trim() || "gemini-2.5-flash";
+  return model?.trim() || process.env["GEMINI_MODEL"]?.trim() || "gemini-3.6-flash";
 }
 
 function mapGeminiError(error: unknown) {
