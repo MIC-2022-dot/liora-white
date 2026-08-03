@@ -9,7 +9,7 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
 export const transcribeSpeech = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { audioBase64: string; mimeType?: string }) => {
+  .validator((input: { audioBase64: string; mimeType?: string }) => {
     if (!input?.audioBase64) throw new Error("audioBase64 is required");
     return input;
   })
