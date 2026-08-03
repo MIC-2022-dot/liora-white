@@ -82,6 +82,132 @@ export type Database = {
         }
         Relationships: []
       }
+      ai_chat_settings: {
+        Row: {
+          away_after_minutes: number
+          created_at: string
+          enabled: boolean
+          mode: string
+          reply_delay_seconds: number
+          updated_at: string
+          user_id: string
+          voice_note_instructions: string | null
+          voice_note_max_seconds: number
+          voice_note_mode: string
+          voice_notes_enabled: boolean
+        }
+        Insert: {
+          away_after_minutes?: number
+          created_at?: string
+          enabled?: boolean
+          mode?: string
+          reply_delay_seconds?: number
+          updated_at?: string
+          user_id: string
+          voice_note_instructions?: string | null
+          voice_note_max_seconds?: number
+          voice_note_mode?: string
+          voice_notes_enabled?: boolean
+        }
+        Update: {
+          away_after_minutes?: number
+          created_at?: string
+          enabled?: boolean
+          mode?: string
+          reply_delay_seconds?: number
+          updated_at?: string
+          user_id?: string
+          voice_note_instructions?: string | null
+          voice_note_max_seconds?: number
+          voice_note_mode?: string
+          voice_notes_enabled?: boolean
+        }
+        Relationships: []
+      }
+      ai_training_examples: {
+        Row: {
+          active: boolean
+          channel: string
+          created_at: string
+          id: string
+          ideal_response: string
+          response_format: string
+          scenario: string | null
+          tags: string[]
+          updated_at: string
+          user_id: string
+          user_input: string
+          weight: number
+        }
+        Insert: {
+          active?: boolean
+          channel?: string
+          created_at?: string
+          id?: string
+          ideal_response: string
+          response_format?: string
+          scenario?: string | null
+          tags?: string[]
+          updated_at?: string
+          user_id: string
+          user_input: string
+          weight?: number
+        }
+        Update: {
+          active?: boolean
+          channel?: string
+          created_at?: string
+          id?: string
+          ideal_response?: string
+          response_format?: string
+          scenario?: string | null
+          tags?: string[]
+          updated_at?: string
+          user_id?: string
+          user_input?: string
+          weight?: number
+        }
+        Relationships: []
+      }
+      ai_training_rules: {
+        Row: {
+          action: string
+          active: boolean
+          channel: string
+          condition: string
+          created_at: string
+          id: string
+          instruction: string | null
+          priority: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          action?: string
+          active?: boolean
+          channel?: string
+          condition: string
+          created_at?: string
+          id?: string
+          instruction?: string | null
+          priority?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          action?: string
+          active?: boolean
+          channel?: string
+          condition?: string
+          created_at?: string
+          id?: string
+          instruction?: string | null
+          priority?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       avatar_behavior_settings: {
         Row: {
           blinking: number

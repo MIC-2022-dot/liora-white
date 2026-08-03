@@ -27,10 +27,12 @@ import { Route as AuthenticatedChatsIdRouteImport } from './routes/_authenticate
 import { Route as AuthenticatedStudioIndexRouteImport } from './routes/_authenticated/studio.index'
 import { Route as AuthenticatedStudioAvatarRouteImport } from './routes/_authenticated/studio.avatar'
 import { Route as AuthenticatedStudioCallsRouteImport } from './routes/_authenticated/studio.calls'
+import { Route as AuthenticatedStudioChatsRouteImport } from './routes/_authenticated/studio.chats'
 import { Route as AuthenticatedStudioInstructionsRouteImport } from './routes/_authenticated/studio.instructions'
 import { Route as AuthenticatedStudioKnowledgeRouteImport } from './routes/_authenticated/studio.knowledge'
 import { Route as AuthenticatedStudioPersonalityRouteImport } from './routes/_authenticated/studio.personality'
 import { Route as AuthenticatedStudioTestRouteImport } from './routes/_authenticated/studio.test'
+import { Route as AuthenticatedStudioTrainingRouteImport } from './routes/_authenticated/studio.training'
 import { Route as AuthenticatedStudioVoiceRouteImport } from './routes/_authenticated/studio.voice'
 import { Route as AuthenticatedUUsernameRouteImport } from './routes/_authenticated/u.$username'
 
@@ -127,6 +129,12 @@ const AuthenticatedStudioCallsRoute =
     path: '/calls',
     getParentRoute: () => AuthenticatedStudioRoute,
   } as any)
+const AuthenticatedStudioChatsRoute =
+  AuthenticatedStudioChatsRouteImport.update({
+    id: '/chats',
+    path: '/chats',
+    getParentRoute: () => AuthenticatedStudioRoute,
+  } as any)
 const AuthenticatedStudioInstructionsRoute =
   AuthenticatedStudioInstructionsRouteImport.update({
     id: '/instructions',
@@ -150,6 +158,12 @@ const AuthenticatedStudioTestRoute = AuthenticatedStudioTestRouteImport.update({
   path: '/test',
   getParentRoute: () => AuthenticatedStudioRoute,
 } as any)
+const AuthenticatedStudioTrainingRoute =
+  AuthenticatedStudioTrainingRouteImport.update({
+    id: '/training',
+    path: '/training',
+    getParentRoute: () => AuthenticatedStudioRoute,
+  } as any)
 const AuthenticatedStudioVoiceRoute =
   AuthenticatedStudioVoiceRouteImport.update({
     id: '/voice',
@@ -178,10 +192,12 @@ export interface FileRoutesByFullPath {
   '/chats/$id': typeof AuthenticatedChatsIdRoute
   '/studio/avatar': typeof AuthenticatedStudioAvatarRoute
   '/studio/calls': typeof AuthenticatedStudioCallsRoute
+  '/studio/chats': typeof AuthenticatedStudioChatsRoute
   '/studio/instructions': typeof AuthenticatedStudioInstructionsRoute
   '/studio/knowledge': typeof AuthenticatedStudioKnowledgeRoute
   '/studio/personality': typeof AuthenticatedStudioPersonalityRoute
   '/studio/test': typeof AuthenticatedStudioTestRoute
+  '/studio/training': typeof AuthenticatedStudioTrainingRoute
   '/studio/voice': typeof AuthenticatedStudioVoiceRoute
   '/u/$username': typeof AuthenticatedUUsernameRoute
   '/chats/': typeof AuthenticatedChatsIndexRoute
@@ -201,10 +217,12 @@ export interface FileRoutesByTo {
   '/chats/$id': typeof AuthenticatedChatsIdRoute
   '/studio/avatar': typeof AuthenticatedStudioAvatarRoute
   '/studio/calls': typeof AuthenticatedStudioCallsRoute
+  '/studio/chats': typeof AuthenticatedStudioChatsRoute
   '/studio/instructions': typeof AuthenticatedStudioInstructionsRoute
   '/studio/knowledge': typeof AuthenticatedStudioKnowledgeRoute
   '/studio/personality': typeof AuthenticatedStudioPersonalityRoute
   '/studio/test': typeof AuthenticatedStudioTestRoute
+  '/studio/training': typeof AuthenticatedStudioTrainingRoute
   '/studio/voice': typeof AuthenticatedStudioVoiceRoute
   '/u/$username': typeof AuthenticatedUUsernameRoute
   '/chats': typeof AuthenticatedChatsIndexRoute
@@ -228,10 +246,12 @@ export interface FileRoutesById {
   '/_authenticated/chats/$id': typeof AuthenticatedChatsIdRoute
   '/_authenticated/studio/avatar': typeof AuthenticatedStudioAvatarRoute
   '/_authenticated/studio/calls': typeof AuthenticatedStudioCallsRoute
+  '/_authenticated/studio/chats': typeof AuthenticatedStudioChatsRoute
   '/_authenticated/studio/instructions': typeof AuthenticatedStudioInstructionsRoute
   '/_authenticated/studio/knowledge': typeof AuthenticatedStudioKnowledgeRoute
   '/_authenticated/studio/personality': typeof AuthenticatedStudioPersonalityRoute
   '/_authenticated/studio/test': typeof AuthenticatedStudioTestRoute
+  '/_authenticated/studio/training': typeof AuthenticatedStudioTrainingRoute
   '/_authenticated/studio/voice': typeof AuthenticatedStudioVoiceRoute
   '/_authenticated/u/$username': typeof AuthenticatedUUsernameRoute
   '/_authenticated/chats/': typeof AuthenticatedChatsIndexRoute
@@ -255,10 +275,12 @@ export interface FileRouteTypes {
     | '/chats/$id'
     | '/studio/avatar'
     | '/studio/calls'
+    | '/studio/chats'
     | '/studio/instructions'
     | '/studio/knowledge'
     | '/studio/personality'
     | '/studio/test'
+    | '/studio/training'
     | '/studio/voice'
     | '/u/$username'
     | '/chats/'
@@ -278,10 +300,12 @@ export interface FileRouteTypes {
     | '/chats/$id'
     | '/studio/avatar'
     | '/studio/calls'
+    | '/studio/chats'
     | '/studio/instructions'
     | '/studio/knowledge'
     | '/studio/personality'
     | '/studio/test'
+    | '/studio/training'
     | '/studio/voice'
     | '/u/$username'
     | '/chats'
@@ -304,10 +328,12 @@ export interface FileRouteTypes {
     | '/_authenticated/chats/$id'
     | '/_authenticated/studio/avatar'
     | '/_authenticated/studio/calls'
+    | '/_authenticated/studio/chats'
     | '/_authenticated/studio/instructions'
     | '/_authenticated/studio/knowledge'
     | '/_authenticated/studio/personality'
     | '/_authenticated/studio/test'
+    | '/_authenticated/studio/training'
     | '/_authenticated/studio/voice'
     | '/_authenticated/u/$username'
     | '/_authenticated/chats/'
@@ -450,6 +476,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedStudioCallsRouteImport
       parentRoute: typeof AuthenticatedStudioRoute
     }
+    '/_authenticated/studio/chats': {
+      id: '/_authenticated/studio/chats'
+      path: '/chats'
+      fullPath: '/studio/chats'
+      preLoaderRoute: typeof AuthenticatedStudioChatsRouteImport
+      parentRoute: typeof AuthenticatedStudioRoute
+    }
     '/_authenticated/studio/instructions': {
       id: '/_authenticated/studio/instructions'
       path: '/instructions'
@@ -476,6 +509,13 @@ declare module '@tanstack/react-router' {
       path: '/test'
       fullPath: '/studio/test'
       preLoaderRoute: typeof AuthenticatedStudioTestRouteImport
+      parentRoute: typeof AuthenticatedStudioRoute
+    }
+    '/_authenticated/studio/training': {
+      id: '/_authenticated/studio/training'
+      path: '/training'
+      fullPath: '/studio/training'
+      preLoaderRoute: typeof AuthenticatedStudioTrainingRouteImport
       parentRoute: typeof AuthenticatedStudioRoute
     }
     '/_authenticated/studio/voice': {
@@ -511,10 +551,12 @@ const AuthenticatedChatsRouteWithChildren =
 interface AuthenticatedStudioRouteChildren {
   AuthenticatedStudioAvatarRoute: typeof AuthenticatedStudioAvatarRoute
   AuthenticatedStudioCallsRoute: typeof AuthenticatedStudioCallsRoute
+  AuthenticatedStudioChatsRoute: typeof AuthenticatedStudioChatsRoute
   AuthenticatedStudioInstructionsRoute: typeof AuthenticatedStudioInstructionsRoute
   AuthenticatedStudioKnowledgeRoute: typeof AuthenticatedStudioKnowledgeRoute
   AuthenticatedStudioPersonalityRoute: typeof AuthenticatedStudioPersonalityRoute
   AuthenticatedStudioTestRoute: typeof AuthenticatedStudioTestRoute
+  AuthenticatedStudioTrainingRoute: typeof AuthenticatedStudioTrainingRoute
   AuthenticatedStudioVoiceRoute: typeof AuthenticatedStudioVoiceRoute
   AuthenticatedStudioIndexRoute: typeof AuthenticatedStudioIndexRoute
 }
@@ -522,10 +564,12 @@ interface AuthenticatedStudioRouteChildren {
 const AuthenticatedStudioRouteChildren: AuthenticatedStudioRouteChildren = {
   AuthenticatedStudioAvatarRoute: AuthenticatedStudioAvatarRoute,
   AuthenticatedStudioCallsRoute: AuthenticatedStudioCallsRoute,
+  AuthenticatedStudioChatsRoute: AuthenticatedStudioChatsRoute,
   AuthenticatedStudioInstructionsRoute: AuthenticatedStudioInstructionsRoute,
   AuthenticatedStudioKnowledgeRoute: AuthenticatedStudioKnowledgeRoute,
   AuthenticatedStudioPersonalityRoute: AuthenticatedStudioPersonalityRoute,
   AuthenticatedStudioTestRoute: AuthenticatedStudioTestRoute,
+  AuthenticatedStudioTrainingRoute: AuthenticatedStudioTrainingRoute,
   AuthenticatedStudioVoiceRoute: AuthenticatedStudioVoiceRoute,
   AuthenticatedStudioIndexRoute: AuthenticatedStudioIndexRoute,
 }
@@ -570,13 +614,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}

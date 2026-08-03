@@ -2,6 +2,8 @@ import { createFileRoute, Link, Outlet, useLocation } from "@tanstack/react-rout
 import {
   BookOpen,
   BrainCircuit,
+  FlaskConical,
+  MessagesSquare,
   LayoutDashboard,
   MessageSquareCode,
   PhoneCall,
@@ -44,6 +46,8 @@ const SECTIONS = [
   { to: "/studio/knowledge", label: "Knowledge", icon: BookOpen },
   { to: "/studio/voice", label: "Voice", icon: Waves },
   { to: "/studio/calls", label: "AI Calls", icon: PhoneCall },
+  { to: "/studio/chats", label: "Autopilot", icon: MessagesSquare },
+  { to: "/studio/training", label: "Training", icon: FlaskConical },
   { to: "/studio/test", label: "Test", icon: MessageSquareCode },
 ] as const;
 

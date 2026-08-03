@@ -6,6 +6,7 @@ import { useAuth } from "@/lib/auth";
 import { Wordmark } from "@/components/liora/wordmark";
 import { UserAvatar } from "@/components/liora/user-avatar";
 import { useUnreadNotifications } from "@/hooks/use-notifications";
+import { useChatAutopilot } from "@/lib/ai/chat-autopilot";
 
 const NAV = [
   { to: "/chats", label: "Chats", icon: MessageCircle },
@@ -18,6 +19,7 @@ export function AppShell({ children }: { children: ReactNode }) {
   const location = useLocation();
   const navigate = useNavigate();
   const unread = useUnreadNotifications();
+  useChatAutopilot();
 
   // Onboarding gate: a signed-in account without a username cannot use the app.
   useEffect(() => {
