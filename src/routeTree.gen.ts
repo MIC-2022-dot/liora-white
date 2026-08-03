@@ -32,6 +32,7 @@ import { Route as AuthenticatedStudioInstructionsRouteImport } from './routes/_a
 import { Route as AuthenticatedStudioKnowledgeRouteImport } from './routes/_authenticated/studio.knowledge'
 import { Route as AuthenticatedStudioPersonalityRouteImport } from './routes/_authenticated/studio.personality'
 import { Route as AuthenticatedStudioTestRouteImport } from './routes/_authenticated/studio.test'
+import { Route as AuthenticatedStudioTrainingRouteImport } from './routes/_authenticated/studio.training'
 import { Route as AuthenticatedStudioVoiceRouteImport } from './routes/_authenticated/studio.voice'
 import { Route as AuthenticatedUUsernameRouteImport } from './routes/_authenticated/u.$username'
 
@@ -157,6 +158,12 @@ const AuthenticatedStudioTestRoute = AuthenticatedStudioTestRouteImport.update({
   path: '/test',
   getParentRoute: () => AuthenticatedStudioRoute,
 } as any)
+const AuthenticatedStudioTrainingRoute =
+  AuthenticatedStudioTrainingRouteImport.update({
+    id: '/training',
+    path: '/training',
+    getParentRoute: () => AuthenticatedStudioRoute,
+  } as any)
 const AuthenticatedStudioVoiceRoute =
   AuthenticatedStudioVoiceRouteImport.update({
     id: '/voice',
@@ -190,6 +197,7 @@ export interface FileRoutesByFullPath {
   '/studio/knowledge': typeof AuthenticatedStudioKnowledgeRoute
   '/studio/personality': typeof AuthenticatedStudioPersonalityRoute
   '/studio/test': typeof AuthenticatedStudioTestRoute
+  '/studio/training': typeof AuthenticatedStudioTrainingRoute
   '/studio/voice': typeof AuthenticatedStudioVoiceRoute
   '/u/$username': typeof AuthenticatedUUsernameRoute
   '/chats/': typeof AuthenticatedChatsIndexRoute
@@ -214,6 +222,7 @@ export interface FileRoutesByTo {
   '/studio/knowledge': typeof AuthenticatedStudioKnowledgeRoute
   '/studio/personality': typeof AuthenticatedStudioPersonalityRoute
   '/studio/test': typeof AuthenticatedStudioTestRoute
+  '/studio/training': typeof AuthenticatedStudioTrainingRoute
   '/studio/voice': typeof AuthenticatedStudioVoiceRoute
   '/u/$username': typeof AuthenticatedUUsernameRoute
   '/chats': typeof AuthenticatedChatsIndexRoute
@@ -242,6 +251,7 @@ export interface FileRoutesById {
   '/_authenticated/studio/knowledge': typeof AuthenticatedStudioKnowledgeRoute
   '/_authenticated/studio/personality': typeof AuthenticatedStudioPersonalityRoute
   '/_authenticated/studio/test': typeof AuthenticatedStudioTestRoute
+  '/_authenticated/studio/training': typeof AuthenticatedStudioTrainingRoute
   '/_authenticated/studio/voice': typeof AuthenticatedStudioVoiceRoute
   '/_authenticated/u/$username': typeof AuthenticatedUUsernameRoute
   '/_authenticated/chats/': typeof AuthenticatedChatsIndexRoute
@@ -270,6 +280,7 @@ export interface FileRouteTypes {
     | '/studio/knowledge'
     | '/studio/personality'
     | '/studio/test'
+    | '/studio/training'
     | '/studio/voice'
     | '/u/$username'
     | '/chats/'
@@ -294,6 +305,7 @@ export interface FileRouteTypes {
     | '/studio/knowledge'
     | '/studio/personality'
     | '/studio/test'
+    | '/studio/training'
     | '/studio/voice'
     | '/u/$username'
     | '/chats'
@@ -321,6 +333,7 @@ export interface FileRouteTypes {
     | '/_authenticated/studio/knowledge'
     | '/_authenticated/studio/personality'
     | '/_authenticated/studio/test'
+    | '/_authenticated/studio/training'
     | '/_authenticated/studio/voice'
     | '/_authenticated/u/$username'
     | '/_authenticated/chats/'
@@ -498,6 +511,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedStudioTestRouteImport
       parentRoute: typeof AuthenticatedStudioRoute
     }
+    '/_authenticated/studio/training': {
+      id: '/_authenticated/studio/training'
+      path: '/training'
+      fullPath: '/studio/training'
+      preLoaderRoute: typeof AuthenticatedStudioTrainingRouteImport
+      parentRoute: typeof AuthenticatedStudioRoute
+    }
     '/_authenticated/studio/voice': {
       id: '/_authenticated/studio/voice'
       path: '/voice'
@@ -536,6 +556,7 @@ interface AuthenticatedStudioRouteChildren {
   AuthenticatedStudioKnowledgeRoute: typeof AuthenticatedStudioKnowledgeRoute
   AuthenticatedStudioPersonalityRoute: typeof AuthenticatedStudioPersonalityRoute
   AuthenticatedStudioTestRoute: typeof AuthenticatedStudioTestRoute
+  AuthenticatedStudioTrainingRoute: typeof AuthenticatedStudioTrainingRoute
   AuthenticatedStudioVoiceRoute: typeof AuthenticatedStudioVoiceRoute
   AuthenticatedStudioIndexRoute: typeof AuthenticatedStudioIndexRoute
 }
@@ -548,6 +569,7 @@ const AuthenticatedStudioRouteChildren: AuthenticatedStudioRouteChildren = {
   AuthenticatedStudioKnowledgeRoute: AuthenticatedStudioKnowledgeRoute,
   AuthenticatedStudioPersonalityRoute: AuthenticatedStudioPersonalityRoute,
   AuthenticatedStudioTestRoute: AuthenticatedStudioTestRoute,
+  AuthenticatedStudioTrainingRoute: AuthenticatedStudioTrainingRoute,
   AuthenticatedStudioVoiceRoute: AuthenticatedStudioVoiceRoute,
   AuthenticatedStudioIndexRoute: AuthenticatedStudioIndexRoute,
 }
