@@ -236,19 +236,36 @@ export const avatarReply = createServerFn({ method: "POST" })
     ].filter(Boolean);
 
     const response = await fetch("https://api.openai.com/v1/chat/completions", {
-      method: "POST",
-      headers: { "Content-Type": "application/json", Authorization: `Bearer ${apiKey}` },
-      body: JSON.stringify({
-        model: "gpt-4o",
-        messages: [{ role: "system", content: lines.join("\n") }, ...data.messages],
-      }),
-    });
+  method: "POST",
+  headers: {
+    "Content-Type": "application/json",
+    Authorization: `Bearer ${apiKey}`,
+  },
+  body: JSON.stringify({
+    model: "gpt-4.1-mini", // Temporarily use this for testing
+    messages: [
+      { role: "system", content: lines.join("\n") },
+      ...data.messages,
+    ],
+  }),
+});
 
-    if (response.status === 429) throw new Error("Rate limit reached. Try again in a moment.");
-    if (!response.ok) throw new Error(`OpenAI API error (${response.status})`);
+const responseText = await response.text();
 
-    const json = (await response.json()) as {
-      choices?: { message?: { content?: string } }[];
+if (!response.ok) {
+  console.error("OpenAI Error:", response.status, responseText);
+
+  throw new Error(`OpenAI ${response.status}: ${responseText}`);
+}
+
+const json = JSON.parse(responseText) as {
+  choices?: {
+    message?: {
+      content?: string;
     };
-    return { reply: json.choices?.[0]?.message?.content ?? "" };
-  });
+  }[];
+};
+
+return {
+  reply: json.choices?.[0]?.message?.content ?? "",
+};
