@@ -465,8 +465,7 @@ export function CallProvider({ children }: { children: ReactNode }) {
 
         let notice: string | null = null;
         if (mode === "ai") {
-          const { startAiSession } = await import("@/lib/ai/session");
-          notice = await startAiSession(current.id);
+          notice = null;
           await send(current.peer.id, "mode", { callId: current.id, mode: "ai", name: null });
         }
         setCall((c) =>
@@ -493,9 +492,7 @@ export function CallProvider({ children }: { children: ReactNode }) {
     const current = callRef.current;
     if (!current) return;
     await send(current.peer.id, "end", { callId: current.id });
-    const seconds = current.startedAt
-      ? Math.round((Date.now() - current.startedAt) / 1000)
-      : null;
+    const seconds = current.startedAt ? Math.round((Date.now() - current.startedAt) / 1000) : null;
     await supabase
       .from("call_history")
       .update({
@@ -525,16 +522,14 @@ export function CallProvider({ children }: { children: ReactNode }) {
     async (mode: AnswerMode) => {
       const current = callRef.current;
       if (!current) return;
-      let notice: string | null = null;
+      const notice: string | null = null;
       if (mode === "ai") {
-        const { startAiSession } = await import("@/lib/ai/session");
-        notice = await startAiSession(current.id);
         localRef.current?.getTracks().forEach((t) => (t.enabled = false));
         setMicEnabled(false);
         setCameraEnabled(false);
       } else {
-        const { endAiSession } = await import("@/lib/ai/session");
-        await endAiSession(current.id);
+        await aiVoiceRef.current?.stop();
+        aiVoiceRef.current = null;
         localRef.current?.getTracks().forEach((t) => (t.enabled = true));
         setMicEnabled(true);
         setCameraEnabled(current.kind === "video");
