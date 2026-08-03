@@ -109,14 +109,14 @@ export class AiVoiceCall {
       if (this.stopped || !text) return;
 
       this.events.onTurn?.({ role: "caller", text, at: Date.now() });
-      this.history = [...this.history, { role: "user", content: text }].slice(-20);
+      this.history = [...this.history, { role: "user" as const, content: text }].slice(-20);
 
       const { reply } = await aiChannelReply({
         data: { channel: "call", messages: this.history },
       });
       if (this.stopped || !reply) return;
 
-      this.history = [...this.history, { role: "assistant", content: reply }].slice(-20);
+      this.history = [...this.history, { role: "assistant" as const, content: reply }].slice(-20);
       this.events.onTurn?.({ role: "ai", text: reply, at: Date.now() });
 
       await this.speak(reply);
