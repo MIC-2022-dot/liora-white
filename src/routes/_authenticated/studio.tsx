@@ -2,6 +2,8 @@ import { createFileRoute, Link, Outlet, useLocation } from "@tanstack/react-rout
 import {
   BookOpen,
   BrainCircuit,
+  FlaskConical,
+  MessagesSquare,
   LayoutDashboard,
   MessageSquareCode,
   PhoneCall,
