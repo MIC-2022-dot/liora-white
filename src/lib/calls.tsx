@@ -25,6 +25,7 @@ import { toast } from "sonner";
 import type { RealtimeChannel } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth";
+import { AiVoiceCall, type AiTurn } from "@/lib/ai/voice-call";
 
 export type CallKind = "voice" | "video";
 export type AnswerMode = "human" | "ai";
@@ -99,11 +100,40 @@ export function CallProvider({ children }: { children: ReactNode }) {
   const callRef = useRef<ActiveCall | null>(null);
   callRef.current = call;
 
+  const aiVoiceRef = useRef<AiVoiceCall | null>(null);
+
   const canUseAi = hasStudio;
 
+  useEffect(() => {
+    const aiVoice = aiVoiceRef.current;
+    if (!aiVoice) return;
+    return () => {
+      void aiVoice.stop();
+      aiVoiceRef.current = null;
+    };
+  }, [call?.mode]);
+
+  useEffect(() => {
+    if (!remoteStream || !call || call.mode !== "ai") return;
+    if (aiVoiceRef.current) return;
+    const pc = pcRef.current;
+    if (!pc) return;
+
+    const aiVoice = new AiVoiceCall(pc, {
+      onTurn: (turn: AiTurn) => {
+        console.log("[LIORA AI]", turn);
+      },
+      onError: (message: string) => {
+        console.error("[LIORA AI Voice]", message);
+      },
+    });
+
+    void aiVoice.start(remoteStream).then(() => {
+      aiVoiceRef.current = aiVoice;
+    });
+  }, [remoteStream, call?.mode]);
+
   const send = useCallback(async (toUserId: string, event: string, payload: unknown) => {
-    // Reuse a per-destination channel for the lifetime of this call to avoid
-    // ephemeral subscriptions that can drop signalling messages during ICE.
     let ch = sendChannels.current.get(toUserId);
     if (!ch) {
       ch = supabase.channel(`liora-call:${toUserId}`);
@@ -122,7 +152,9 @@ export function CallProvider({ children }: { children: ReactNode }) {
 
     try {
       pcRef.current?.close();
-    } catch {}
+    } catch {
+      // ignore
+    }
     pcRef.current = null;
 
     localRef.current?.getTracks().forEach((t) => t.stop());
@@ -132,11 +164,12 @@ export function CallProvider({ children }: { children: ReactNode }) {
     pendingOfferCallId.current = null;
     pendingCandidates.current = [];
 
-    // Remove any temporary signalling channels we opened for sending.
     for (const ch of sendChannels.current.values()) {
       try {
         void supabase.removeChannel(ch);
-      } catch {}
+      } catch {
+        // ignore
+      }
     }
     sendChannels.current.clear();
 
@@ -163,80 +196,60 @@ export function CallProvider({ children }: { children: ReactNode }) {
         const [stream] = e.streams;
         if (stream) setRemoteStream(stream);
       };
-  let disconnectTimer: ReturnType<typeof setTimeout> | null = null;
 
       pc.onconnectionstatechange = () => {
-  const state = pc.connectionState;
+        const state = pc.connectionState;
+        console.log("[LIORA WebRTC] Connection state:", state);
+        if (state === "connected") {
+          console.log("[LIORA WebRTC] Call connection established");
+          setCall((c) =>
+            c
+              ? {
+                  ...c,
+                  status: "active",
+                  startedAt: c.startedAt ?? Date.now(),
+                }
+              : c,
+          );
+          return;
+        }
+        if (state === "connecting") {
+          console.log("[LIORA WebRTC] Connecting...");
+          return;
+        }
+        if (state === "failed") {
+          console.error("[LIORA WebRTC] Peer connection FAILED");
+          endLocal();
+          return;
+        }
+        if (state === "disconnected") {
+          console.warn("[LIORA WebRTC] Temporarily disconnected — allowing recovery");
+          return;
+        }
+      };
 
-  console.log("[LIORA WebRTC] Connection state:", state);
+      pc.oniceconnectionstatechange = () => {
+        console.log("[LIORA WebRTC] ICE connection state:", pc.iceConnectionState);
+        if (pc.iceConnectionState === "connected") {
+          console.log("[LIORA WebRTC] ICE connected");
+        }
+        if (pc.iceConnectionState === "completed") {
+          console.log("[LIORA WebRTC] ICE completed");
+        }
+        if (pc.iceConnectionState === "checking") {
+          console.log("[LIORA WebRTC] ICE checking...");
+        }
+        if (pc.iceConnectionState === "disconnected") {
+          console.warn("[LIORA WebRTC] ICE temporarily disconnected");
+        }
+        if (pc.iceConnectionState === "failed") {
+          console.error("[LIORA WebRTC] ICE FAILED");
+        }
+      };
 
-  // Treat connected as the canonical live state.
-  if (state === "connected") {
-    console.log("[LIORA WebRTC] Call connection established");
-    setCall((c) =>
-      c
-        ? {
-            ...c,
-            status: "active",
-            startedAt: c.startedAt ?? Date.now(),
-          }
-        : c,
-    );
-    return;
-  }
-
-  if (state === "connecting") {
-    console.log("[LIORA WebRTC] Connecting...");
-    return;
-  }
-
-  if (state === "failed") {
-    console.error("[LIORA WebRTC] Peer connection FAILED");
-    // Only treat FAILED as unrecoverable — terminate the call.
-    endLocal();
-    return;
-  }
-
-  if (state === "disconnected") {
-    console.warn("[LIORA WebRTC] Temporarily disconnected — allowing recovery");
-    // Allow ICE / connection recovery; do not end the call here.
-    return;
-  }
-};
-
-pc.oniceconnectionstatechange = () => {
-  console.log(
-    "[LIORA WebRTC] ICE connection state:",
-    pc.iceConnectionState,
-  );
-
-  if (pc.iceConnectionState === "connected") {
-    console.log("[LIORA WebRTC] ICE connected");
-  }
-
-  if (pc.iceConnectionState === "completed") {
-    console.log("[LIORA WebRTC] ICE completed");
-  }
-
-  if (pc.iceConnectionState === "checking") {
-    console.log("[LIORA WebRTC] ICE checking...");
-  }
-
-  if (pc.iceConnectionState === "disconnected") {
-    console.warn("[LIORA WebRTC] ICE temporarily disconnected");
-  }
-
-  if (pc.iceConnectionState === "failed") {
-    console.error("[LIORA WebRTC] ICE FAILED");
-  }
-};
-
-pc.onsignalingstatechange = () => {
-  console.log(
-    "[LIORA WebRTC] Signaling state:",
-    pc.signalingState,
-  );
-};
+      pc.onsignalingstatechange = () => {
+        console.log("[LIORA WebRTC] Signaling state:", pc.signalingState);
+      };
       pcRef.current = pc;
       return pc;
     },
@@ -253,7 +266,6 @@ pc.onsignalingstatechange = () => {
     return stream;
   }, []);
 
-  /** Load the caller-side AI settings for auto-answering. */
   useEffect(() => {
     if (!user || !hasStudio) {
       setAiSettings(null);
@@ -269,7 +281,6 @@ pc.onsignalingstatechange = () => {
 
   const answerRef = useRef<(mode: AnswerMode) => Promise<void>>(async () => {});
 
-  /** Subscribe to my own signalling channel. */
   useEffect(() => {
     if (!user) return;
     const channel = supabase.channel(`liora-call:${user.id}`);
@@ -288,7 +299,6 @@ pc.onsignalingstatechange = () => {
         }
         pendingOffer.current = p.offer;
         pendingOfferCallId.current = p.callId;
-        // Mark call as active (not ended) when a new incoming invite arrives.
         endedRef.current = false;
         setCall({
           id: p.callId,
@@ -303,7 +313,6 @@ pc.onsignalingstatechange = () => {
       })
       .on("broadcast", { event: "answer" }, async ({ payload }) => {
         const p = payload as { callId?: string; answer: RTCSessionDescriptionInit; mode: AnswerMode };
-        // Validate callId matches current call
         if (!p.callId || p.callId !== callRef.current?.id) return;
         const pc = pcRef.current;
         if (!pc) return;
@@ -345,8 +354,7 @@ pc.onsignalingstatechange = () => {
             ? {
                 ...c,
                 mode: p.mode,
-                aiNotice:
-                  p.mode === "ai" ? `${p.name ?? "Their"} AI representation is speaking` : null,
+                aiNotice: p.mode === "ai" ? `${p.name ?? "Their"} AI representation is speaking` : null,
               }
             : c,
         );
@@ -360,7 +368,6 @@ pc.onsignalingstatechange = () => {
     };
   }, [user, send, endLocal]);
 
-  /** AI auto-answer countdown for incoming calls. */
   useEffect(() => {
     if (!call || call.direction !== "incoming" || call.status !== "incoming") return;
     if (!hasStudio || !aiSettings?.enabled) return;
@@ -398,7 +405,6 @@ pc.onsignalingstatechange = () => {
           .eq("id", user.id)
           .maybeSingle();
 
-        // mark the call as active
         endedRef.current = false;
         setCall({
           id: row.id,
@@ -426,11 +432,9 @@ pc.onsignalingstatechange = () => {
     async (mode: AnswerMode) => {
       const current = callRef.current;
       if (!current || !pendingOffer.current || !user) return;
-      // Ensure the pending offer belongs to this call (ignore stale offers)
       if (pendingOfferCallId.current && pendingOfferCallId.current !== current.id) return;
       if (autoAnswerTimer.current) clearTimeout(autoAnswerTimer.current);
       try {
-        // mark the call as active
         endedRef.current = false;
         setCall({ ...current, status: "connecting", mode });
         const pc = buildPeerConnection(current.peer.id, current.id);
@@ -438,8 +442,6 @@ pc.onsignalingstatechange = () => {
         stream.getTracks().forEach((t) => pc.addTrack(t, stream));
 
         if (mode === "ai") {
-          // The AI represents the owner: their own mic/camera stay muted while
-          // the avatar provider drives the outbound media.
           stream.getTracks().forEach((t) => (t.enabled = false));
           setMicEnabled(false);
           setCameraEnabled(false);
@@ -537,7 +539,6 @@ pc.onsignalingstatechange = () => {
         setMicEnabled(true);
         setCameraEnabled(current.kind === "video");
       }
-      // The peer connection is untouched: the call never drops during a switch.
       setCall((c) => (c ? { ...c, mode, aiNotice: notice } : c));
       await send(current.peer.id, "mode", { callId: current.id, mode, name: null });
     },
