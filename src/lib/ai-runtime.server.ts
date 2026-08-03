@@ -14,15 +14,15 @@ export type Delivery = "text" | "voice_note" | "spoken" | "silent";
 type Client = SupabaseClient<Database>;
 
 export function requireGatewayKey() {
-  const apiKey = process.env["LOVABLE_API_KEY"];
+  const apiKey = process.env["OPENAI_API_KEY"];
   if (!apiKey) throw new Error("AI gateway is not configured");
   return apiKey;
 }
 
 function gatewayError(status: number) {
+  if (status === 401) return new Error("OpenAI authentication failed. Check your API key.");
   if (status === 429) return new Error("Rate limit reached. Try again in a moment.");
-  if (status === 402) return new Error("AI credits exhausted. Add credits to keep using Studio.");
-  return new Error(`AI gateway error (${status})`);
+  return new Error(`OpenAI API error (${status})`);
 }
 
 /** Speech-to-text for caller audio captured during a live call. */
@@ -40,10 +40,10 @@ export async function transcribeAudio(input: {
   const ext = mime.includes("webm") ? "webm" : mime.includes("mp4") ? "mp4" : "wav";
 
   const form = new FormData();
-  form.append("model", "openai/gpt-4o-transcribe");
+  form.append("model", "gpt-4o-transcribe");
   form.append("file", new Blob([bytes], { type: mime }), `speech.${ext}`);
 
-  const response = await fetch("https://ai.gateway.lovable.dev/v1/audio/transcriptions", {
+  const response = await fetch("https://api.openai.com/v1/audio/transcriptions", {
     method: "POST",
     headers: { Authorization: `Bearer ${input.apiKey}` },
     body: form,
@@ -164,12 +164,11 @@ export async function generateChannelReply(input: {
       ? `Respond ONLY with JSON: {"reply": string, "delivery": "spoken", "reason": string}.`
       : `Respond ONLY with JSON: {"reply": string, "delivery": "text" | "voice_note" | "silent", "reason": string}. Use "voice_note" only when your trained rules say a spoken message fits better, and "silent" only when a trained rule says not to answer.`;
 
-  const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+  const response = await fetch("https://api.openai.com/v1/chat/completions", {
     method: "POST",
     headers: { "Content-Type": "application/json", Authorization: `Bearer ${input.apiKey}` },
     body: JSON.stringify({
-      model: "openai/gpt-5.6-sol",
-      reasoning_effort: "none",
+      model: "gpt-4o",
       response_format: { type: "json_object" },
       messages: [{ role: "system", content: `${system}\n\n${format}` }, ...input.messages],
     }),

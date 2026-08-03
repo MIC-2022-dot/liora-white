@@ -178,7 +178,7 @@ export const avatarReply = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const { assertStudio } = await import("@/lib/studio-guard.server");
     await assertStudio(context);
-    const apiKey = process.env["LOVABLE_API_KEY"];
+    const apiKey = process.env["OPENAI_API_KEY"];
     if (!apiKey) throw new Error("AI gateway is not configured");
 
     const [{ data: profile }, { data: personality }, { data: instructions }, { data: knowledge }] =
@@ -235,20 +235,17 @@ export const avatarReply = createServerFn({ method: "POST" })
       "If you genuinely do not know something about the owner's life, say so plainly rather than inventing it.",
     ].filter(Boolean);
 
-    const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+    const response = await fetch("https://api.openai.com/v1/chat/completions", {
       method: "POST",
       headers: { "Content-Type": "application/json", Authorization: `Bearer ${apiKey}` },
       body: JSON.stringify({
-        model: "openai/gpt-5.6-sol",
-        reasoning_effort: "none",
+        model: "gpt-4o",
         messages: [{ role: "system", content: lines.join("\n") }, ...data.messages],
       }),
     });
 
     if (response.status === 429) throw new Error("Rate limit reached. Try again in a moment.");
-    if (response.status === 402)
-      throw new Error("AI credits exhausted. Add credits to keep using Studio.");
-    if (!response.ok) throw new Error(`AI gateway error (${response.status})`);
+    if (!response.ok) throw new Error(`OpenAI API error (${response.status})`);
 
     const json = (await response.json()) as {
       choices?: { message?: { content?: string } }[];
