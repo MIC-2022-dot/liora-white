@@ -19,6 +19,7 @@ export function AppShell({ children }: { children: ReactNode }) {
   const location = useLocation();
   const navigate = useNavigate();
   const unread = useUnreadNotifications();
+  useChatAutopilot();
 
   // Onboarding gate: a signed-in account without a username cannot use the app.
   useEffect(() => {
