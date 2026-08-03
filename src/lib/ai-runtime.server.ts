@@ -7,6 +7,7 @@
  */
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/integrations/supabase/types";
+import { generateGeminiText, transcribeGeminiAudio } from "@/lib/ai/gemini";
 
 export type Channel = "call" | "chat";
 export type Delivery = "text" | "voice_note" | "spoken" | "silent";
@@ -14,15 +15,9 @@ export type Delivery = "text" | "voice_note" | "spoken" | "silent";
 type Client = SupabaseClient<Database>;
 
 export function requireGatewayKey() {
-  const apiKey = process.env["OPENAI_API_KEY"];
+  const apiKey = process.env["GEMINI_API_KEY"];
   if (!apiKey) throw new Error("AI gateway is not configured");
   return apiKey;
-}
-
-function gatewayError(status: number) {
-  if (status === 401) return new Error("OpenAI authentication failed. Check your API key.");
-  if (status === 429) return new Error("Rate limit reached. Try again in a moment.");
-  return new Error(`OpenAI API error (${status})`);
 }
 
 /** Speech-to-text for caller audio captured during a live call. */
@@ -39,22 +34,16 @@ export async function transcribeAudio(input: {
   const mime = input.mimeType ?? "audio/wav";
   const ext = mime.includes("webm") ? "webm" : mime.includes("mp4") ? "mp4" : "wav";
 
-  const form = new FormData();
-  form.append("model", "gpt-4o-transcribe");
-  form.append("file", new Blob([bytes], { type: mime }), `speech.${ext}`);
-
-  const response = await fetch("https://api.openai.com/v1/audio/transcriptions", {
-    method: "POST",
-    headers: { Authorization: `Bearer ${input.apiKey}` },
-    body: form,
-  });
-  if (!response.ok) {
-    const detail = await response.text().catch(() => "");
-    if (response.status === 429 || response.status === 402) throw gatewayError(response.status);
-    throw new Error(`Transcription failed (${response.status}) ${detail.slice(0, 200)}`);
+  try {
+    return transcribeGeminiAudio({
+      apiKey: input.apiKey,
+      audioBase64: input.audioBase64,
+      mimeType: mime,
+    });
+  } catch (error) {
+    if (error instanceof Error) throw error;
+    throw new Error("Transcription failed.");
   }
-  const json = (await response.json()) as { text?: string };
-  return { text: (json.text ?? "").trim() };
 }
 
 /** Compiles the owner's full Studio configuration into a channel-aware prompt. */
@@ -164,20 +153,13 @@ export async function generateChannelReply(input: {
       ? `Respond ONLY with JSON: {"reply": string, "delivery": "spoken", "reason": string}.`
       : `Respond ONLY with JSON: {"reply": string, "delivery": "text" | "voice_note" | "silent", "reason": string}. Use "voice_note" only when your trained rules say a spoken message fits better, and "silent" only when a trained rule says not to answer.`;
 
-  const response = await fetch("https://api.openai.com/v1/chat/completions", {
-    method: "POST",
-    headers: { "Content-Type": "application/json", Authorization: `Bearer ${input.apiKey}` },
-    body: JSON.stringify({
-      model: "gpt-4o",
-      response_format: { type: "json_object" },
-      messages: [{ role: "system", content: `${system}\n\n${format}` }, ...input.messages],
-    }),
+  const result = await generateGeminiText({
+    apiKey: input.apiKey,
+    systemInstruction: `${system}\n\n${format}`,
+    messages: input.messages,
   });
 
-  if (!response.ok) throw gatewayError(response.status);
-
-  const json = (await response.json()) as { choices?: { message?: { content?: string } }[] };
-  const raw = json.choices?.[0]?.message?.content ?? "";
+  const raw = result.text;
 
   let reply = raw.trim();
   let delivery: Delivery = input.channel === "call" ? "spoken" : "text";

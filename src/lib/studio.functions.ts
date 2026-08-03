@@ -1,5 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { generateGeminiText } from "@/lib/ai/gemini";
 
 /**
  * Studio / AI server functions. Every handler re-checks Studio permission
@@ -143,7 +144,7 @@ export const endAvatarCallSession = createServerFn({ method: "POST" })
 
 export const previewVoice = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { text: string }) => input)
+  .validator((input: { text: string }) => input)
   .handler(async ({ data, context }) => {
     const { assertStudio } = await import("@/lib/studio-guard.server");
     await assertStudio(context);
@@ -178,7 +179,7 @@ export const avatarReply = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const { assertStudio } = await import("@/lib/studio-guard.server");
     await assertStudio(context);
-    const apiKey = process.env["OPENAI_API_KEY"];
+    const apiKey = process.env["GEMINI_API_KEY"];
     if (!apiKey) throw new Error("AI gateway is not configured");
 
     const [{ data: profile }, { data: personality }, { data: instructions }, { data: knowledge }] =
@@ -235,38 +236,13 @@ export const avatarReply = createServerFn({ method: "POST" })
       "If you genuinely do not know something about the owner's life, say so plainly rather than inventing it.",
     ].filter(Boolean);
 
-    const response = await fetch("https://api.openai.com/v1/chat/completions", {
-  method: "POST",
-  headers: {
-    "Content-Type": "application/json",
-    Authorization: `Bearer ${apiKey}`,
-  },
-  body: JSON.stringify({
-    model: "gpt-4.1-mini", // Temporarily use this for testing
-    messages: [
-      { role: "system", content: lines.join("\n") },
-      ...data.messages,
-    ],
-  }),
-});
+    const result = await generateGeminiText({
+      apiKey,
+      systemInstruction: lines.join("\n"),
+      messages: data.messages,
+    });
 
-const responseText = await response.text();
-
-if (!response.ok) {
-  console.error("OpenAI Error:", response.status, responseText);
-
-  throw new Error(`OpenAI ${response.status}: ${responseText}`);
-}
-
-const json = JSON.parse(responseText) as {
-  choices?: {
-    message?: {
-      content?: string;
+    return {
+      reply: result.text,
     };
-  }[];
-};
-
-return {
-  reply: json.choices?.[0]?.message?.content ?? "",
-};
   });
