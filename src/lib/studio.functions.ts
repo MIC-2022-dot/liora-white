@@ -269,3 +269,4 @@ const json = JSON.parse(responseText) as {
 return {
   reply: json.choices?.[0]?.message?.content ?? "",
 };
+  });
