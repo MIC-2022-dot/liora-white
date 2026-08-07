@@ -11,6 +11,13 @@ import { generateGeminiText, transcribeGeminiAudio } from "@/lib/ai/gemini";
 
 export type Channel = "call" | "chat";
 export type Delivery = "text" | "voice_note" | "spoken" | "silent";
+export type ChannelReply = {
+  reply: string;
+  delivery: Delivery;
+  reason: string;
+  imageRequest?: boolean;
+  imageTags?: string[];
+};
 
 type Client = SupabaseClient<Database>;
 
@@ -114,8 +121,7 @@ export async function buildSystemPrompt(supabase: Client, userId: string, channe
     rules.data?.length
       ? `Owner rules, highest priority first:\n${rules.data
           .map(
-            (r) =>
-              `- if ${r.condition} → ${r.action}${r.instruction ? ` (${r.instruction})` : ""}`,
+            (r) => `- if ${r.condition} → ${r.action}${r.instruction ? ` (${r.instruction})` : ""}`,
           )
           .join("\n")}`
       : null,
@@ -127,6 +133,9 @@ export async function buildSystemPrompt(supabase: Client, userId: string, channe
       : channel === "chat"
         ? "Voice notes are disabled — always answer with text."
         : null,
+    channel === "chat"
+      ? `Image sharing is available. When the user explicitly asks you to send, show, or share a picture, photo, or selfie of you or your surroundings, set "imageRequest": true and extract the requested visual context into "imageTags" as lowercase, concise tags (e.g. "room", "bedroom", "home", "indoors", "gym", "workout", "beach", "selfie"). Keep the reply short and natural, like "Sure 😊". Do not invent reasons why an image cannot be sent, and do not claim an image was sent — the application will attach the actual image. Never invent personal circumstances such as "my room is messy" unless that information exists in the owner's actual knowledge.`
+      : null,
     "If you genuinely do not know something about the owner's life, say so plainly rather than inventing it.",
   ];
 
@@ -151,7 +160,7 @@ export async function generateChannelReply(input: {
   const format =
     input.channel === "call"
       ? `Respond ONLY with JSON: {"reply": string, "delivery": "spoken", "reason": string}.`
-      : `Respond ONLY with JSON: {"reply": string, "delivery": "text" | "voice_note" | "silent", "reason": string}. Use "voice_note" only when your trained rules say a spoken message fits better, and "silent" only when a trained rule says not to answer.`;
+      : `Respond ONLY with JSON: {"reply": string, "delivery": "text" | "voice_note" | "silent", "reason": string, "imageRequest": boolean, "imageTags": string[]}. Use "voice_note" only when your trained rules say a spoken message fits better, and "silent" only when a trained rule says not to answer. Set "imageRequest" to true only when the user explicitly asks for a picture, photo, or selfie. When "imageRequest" is true, provide "imageTags" as lowercase, concise tags describing the requested visual context.`;
 
   const result = await generateGeminiText({
     apiKey: input.apiKey,
@@ -164,16 +173,31 @@ export async function generateChannelReply(input: {
   let reply = raw.trim();
   let delivery: Delivery = input.channel === "call" ? "spoken" : "text";
   let reason = "";
+  let imageRequest = false;
+  let imageTags: string[] = [];
   try {
-    const parsed = JSON.parse(raw) as { reply?: string; delivery?: Delivery; reason?: string };
+    const parsed = JSON.parse(raw) as {
+      reply?: string;
+      delivery?: Delivery;
+      reason?: string;
+      imageRequest?: boolean;
+      imageTags?: unknown;
+    };
     if (parsed && typeof parsed.reply === "string") {
       reply = parsed.reply.trim();
       if (parsed.delivery) delivery = parsed.delivery;
       reason = parsed.reason ?? "";
+      if (typeof parsed.imageRequest === "boolean") imageRequest = parsed.imageRequest;
+      if (Array.isArray(parsed.imageTags)) {
+        imageTags = parsed.imageTags
+          .filter((t): t is string => typeof t === "string")
+          .map((t) => t.trim().toLowerCase())
+          .filter(Boolean);
+      }
     }
   } catch {
     /* fall back to the raw text reply */
   }
 
-  return { reply, delivery, reason };
+  return { reply, delivery, reason, imageRequest, imageTags };
 }

@@ -82,7 +82,9 @@ export function useChatAutopilot() {
         .filter((m) => m.content.trim().length > 0);
       if (!messages.length) return;
 
-      const { reply, delivery } = await aiChannelReply({ data: { channel: "chat", messages } });
+      const { reply, delivery, imageRequest, imageTags } = await aiChannelReply({
+        data: { channel: "chat", messages },
+      });
       if (!reply || delivery === "silent") return;
 
       // Determine the recipient (the other participant in this conversation).
@@ -94,17 +96,17 @@ export function useChatAutopilot() {
         .limit(1);
       const recipientId = participants?.[0]?.user_id;
 
-      // Try to send a matching library image when the AI reply indicates
-      // a visual response is relevant. This is best-effort — if no image
-      // matches, the text reply still goes through.
+      // Explicit image request: use the structured image intent returned by
+      // the AI. The user's request determines the context, not the AI's prose.
+      // This is best-effort — if no image matches, fall through to normal delivery.
       let imageSent = false;
-      if (recipientId) {
+      if (recipientId && imageRequest) {
         try {
           const { image } = await retrieveImageForRecipient({
             data: {
               recipientId,
               conversationId,
-              tags: extractImageTags(reply),
+              tags: imageTags?.length ? imageTags : extractImageTags(reply),
             },
           });
           if (image) {
