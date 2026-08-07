@@ -28,6 +28,8 @@ import { Route as AuthenticatedStudioIndexRouteImport } from './routes/_authenti
 import { Route as AuthenticatedStudioAvatarRouteImport } from './routes/_authenticated/studio.avatar'
 import { Route as AuthenticatedStudioCallsRouteImport } from './routes/_authenticated/studio.calls'
 import { Route as AuthenticatedStudioChatsRouteImport } from './routes/_authenticated/studio.chats'
+import { Route as AuthenticatedStudioImageRulesRouteImport } from './routes/_authenticated/studio.image-rules'
+import { Route as AuthenticatedStudioImagesRouteImport } from './routes/_authenticated/studio.images'
 import { Route as AuthenticatedStudioInstructionsRouteImport } from './routes/_authenticated/studio.instructions'
 import { Route as AuthenticatedStudioKnowledgeRouteImport } from './routes/_authenticated/studio.knowledge'
 import { Route as AuthenticatedStudioPersonalityRouteImport } from './routes/_authenticated/studio.personality'
@@ -135,6 +137,18 @@ const AuthenticatedStudioChatsRoute =
     path: '/chats',
     getParentRoute: () => AuthenticatedStudioRoute,
   } as any)
+const AuthenticatedStudioImageRulesRoute =
+  AuthenticatedStudioImageRulesRouteImport.update({
+    id: '/image-rules',
+    path: '/image-rules',
+    getParentRoute: () => AuthenticatedStudioRoute,
+  } as any)
+const AuthenticatedStudioImagesRoute =
+  AuthenticatedStudioImagesRouteImport.update({
+    id: '/images',
+    path: '/images',
+    getParentRoute: () => AuthenticatedStudioRoute,
+  } as any)
 const AuthenticatedStudioInstructionsRoute =
   AuthenticatedStudioInstructionsRouteImport.update({
     id: '/instructions',
@@ -193,6 +207,8 @@ export interface FileRoutesByFullPath {
   '/studio/avatar': typeof AuthenticatedStudioAvatarRoute
   '/studio/calls': typeof AuthenticatedStudioCallsRoute
   '/studio/chats': typeof AuthenticatedStudioChatsRoute
+  '/studio/image-rules': typeof AuthenticatedStudioImageRulesRoute
+  '/studio/images': typeof AuthenticatedStudioImagesRoute
   '/studio/instructions': typeof AuthenticatedStudioInstructionsRoute
   '/studio/knowledge': typeof AuthenticatedStudioKnowledgeRoute
   '/studio/personality': typeof AuthenticatedStudioPersonalityRoute
@@ -218,6 +234,8 @@ export interface FileRoutesByTo {
   '/studio/avatar': typeof AuthenticatedStudioAvatarRoute
   '/studio/calls': typeof AuthenticatedStudioCallsRoute
   '/studio/chats': typeof AuthenticatedStudioChatsRoute
+  '/studio/image-rules': typeof AuthenticatedStudioImageRulesRoute
+  '/studio/images': typeof AuthenticatedStudioImagesRoute
   '/studio/instructions': typeof AuthenticatedStudioInstructionsRoute
   '/studio/knowledge': typeof AuthenticatedStudioKnowledgeRoute
   '/studio/personality': typeof AuthenticatedStudioPersonalityRoute
@@ -247,6 +265,8 @@ export interface FileRoutesById {
   '/_authenticated/studio/avatar': typeof AuthenticatedStudioAvatarRoute
   '/_authenticated/studio/calls': typeof AuthenticatedStudioCallsRoute
   '/_authenticated/studio/chats': typeof AuthenticatedStudioChatsRoute
+  '/_authenticated/studio/image-rules': typeof AuthenticatedStudioImageRulesRoute
+  '/_authenticated/studio/images': typeof AuthenticatedStudioImagesRoute
   '/_authenticated/studio/instructions': typeof AuthenticatedStudioInstructionsRoute
   '/_authenticated/studio/knowledge': typeof AuthenticatedStudioKnowledgeRoute
   '/_authenticated/studio/personality': typeof AuthenticatedStudioPersonalityRoute
@@ -276,6 +296,8 @@ export interface FileRouteTypes {
     | '/studio/avatar'
     | '/studio/calls'
     | '/studio/chats'
+    | '/studio/image-rules'
+    | '/studio/images'
     | '/studio/instructions'
     | '/studio/knowledge'
     | '/studio/personality'
@@ -301,6 +323,8 @@ export interface FileRouteTypes {
     | '/studio/avatar'
     | '/studio/calls'
     | '/studio/chats'
+    | '/studio/image-rules'
+    | '/studio/images'
     | '/studio/instructions'
     | '/studio/knowledge'
     | '/studio/personality'
@@ -329,6 +353,8 @@ export interface FileRouteTypes {
     | '/_authenticated/studio/avatar'
     | '/_authenticated/studio/calls'
     | '/_authenticated/studio/chats'
+    | '/_authenticated/studio/image-rules'
+    | '/_authenticated/studio/images'
     | '/_authenticated/studio/instructions'
     | '/_authenticated/studio/knowledge'
     | '/_authenticated/studio/personality'
@@ -483,6 +509,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedStudioChatsRouteImport
       parentRoute: typeof AuthenticatedStudioRoute
     }
+    '/_authenticated/studio/image-rules': {
+      id: '/_authenticated/studio/image-rules'
+      path: '/image-rules'
+      fullPath: '/studio/image-rules'
+      preLoaderRoute: typeof AuthenticatedStudioImageRulesRouteImport
+      parentRoute: typeof AuthenticatedStudioRoute
+    }
+    '/_authenticated/studio/images': {
+      id: '/_authenticated/studio/images'
+      path: '/images'
+      fullPath: '/studio/images'
+      preLoaderRoute: typeof AuthenticatedStudioImagesRouteImport
+      parentRoute: typeof AuthenticatedStudioRoute
+    }
     '/_authenticated/studio/instructions': {
       id: '/_authenticated/studio/instructions'
       path: '/instructions'
@@ -552,6 +592,8 @@ interface AuthenticatedStudioRouteChildren {
   AuthenticatedStudioAvatarRoute: typeof AuthenticatedStudioAvatarRoute
   AuthenticatedStudioCallsRoute: typeof AuthenticatedStudioCallsRoute
   AuthenticatedStudioChatsRoute: typeof AuthenticatedStudioChatsRoute
+  AuthenticatedStudioImageRulesRoute: typeof AuthenticatedStudioImageRulesRoute
+  AuthenticatedStudioImagesRoute: typeof AuthenticatedStudioImagesRoute
   AuthenticatedStudioInstructionsRoute: typeof AuthenticatedStudioInstructionsRoute
   AuthenticatedStudioKnowledgeRoute: typeof AuthenticatedStudioKnowledgeRoute
   AuthenticatedStudioPersonalityRoute: typeof AuthenticatedStudioPersonalityRoute
@@ -565,6 +607,8 @@ const AuthenticatedStudioRouteChildren: AuthenticatedStudioRouteChildren = {
   AuthenticatedStudioAvatarRoute: AuthenticatedStudioAvatarRoute,
   AuthenticatedStudioCallsRoute: AuthenticatedStudioCallsRoute,
   AuthenticatedStudioChatsRoute: AuthenticatedStudioChatsRoute,
+  AuthenticatedStudioImageRulesRoute: AuthenticatedStudioImageRulesRoute,
+  AuthenticatedStudioImagesRoute: AuthenticatedStudioImagesRoute,
   AuthenticatedStudioInstructionsRoute: AuthenticatedStudioInstructionsRoute,
   AuthenticatedStudioKnowledgeRoute: AuthenticatedStudioKnowledgeRoute,
   AuthenticatedStudioPersonalityRoute: AuthenticatedStudioPersonalityRoute,

@@ -12,6 +12,7 @@ import { sendMessage } from "@/lib/chat";
 import { uploadTo } from "@/lib/storage";
 import { aiChannelReply } from "@/lib/ai-runtime.functions";
 import { generateAiSpeech } from "@/lib/ai/elevenlabs";
+import { retrieveImageForRecipient, sendLibraryImage } from "@/lib/image-retrieval.functions";
 
 export type ChatAutopilotSettings = {
   enabled: boolean;
@@ -75,13 +76,54 @@ export function useChatAutopilot() {
         .map((m) => ({
           role: (m.sender_id === user.id ? "assistant" : "user") as "assistant" | "user",
           content:
-            m.body ?? (m.kind === "audio" ? "(voice note)" : m.kind === "image" ? "(photo)" : "(attachment)"),
+            m.body ??
+            (m.kind === "audio" ? "(voice note)" : m.kind === "image" ? "(photo)" : "(attachment)"),
         }))
         .filter((m) => m.content.trim().length > 0);
       if (!messages.length) return;
 
       const { reply, delivery } = await aiChannelReply({ data: { channel: "chat", messages } });
       if (!reply || delivery === "silent") return;
+
+      // Determine the recipient (the other participant in this conversation).
+      const { data: participants } = await supabase
+        .from("conversation_participants")
+        .select("user_id")
+        .eq("conversation_id", conversationId)
+        .neq("user_id", user.id)
+        .limit(1);
+      const recipientId = participants?.[0]?.user_id;
+
+      // Try to send a matching library image when the AI reply indicates
+      // a visual response is relevant. This is best-effort — if no image
+      // matches, the text reply still goes through.
+      let imageSent = false;
+      if (recipientId) {
+        try {
+          const { image } = await retrieveImageForRecipient({
+            data: {
+              recipientId,
+              conversationId,
+              tags: extractImageTags(reply),
+            },
+          });
+          if (image) {
+            await sendLibraryImage({
+              data: {
+                imageId: image.id,
+                recipientId,
+                conversationId,
+                caption: reply,
+              },
+            });
+            imageSent = true;
+          }
+        } catch {
+          /* image sending is best-effort — never break the text reply */
+        }
+      }
+
+      if (imageSent) return;
 
       const wantsVoice =
         s.voice_notes_enabled &&
@@ -159,4 +201,39 @@ export function useChatAutopilot() {
   }, [user, settings, respond]);
 
   return { settings };
+}
+
+/**
+ * Extracts image-relevant tags from an AI reply to guide image retrieval.
+ * Maps common visual/activity/location keywords to library tags.
+ */
+function extractImageTags(reply: string): string[] {
+  const text = reply.toLowerCase();
+  const tags: string[] = [];
+
+  const keywordMap: Record<string, string[]> = {
+    morning: ["morning", "breakfast", "sunrise", "early"],
+    afternoon: ["afternoon", "lunch", "midday"],
+    evening: ["evening", "dinner", "sunset"],
+    night: ["night", "nightlife", "late"],
+    beach: ["beach", "ocean", "sea", "shore", "sand"],
+    restaurant: ["restaurant", "dinner", "eating out", "food"],
+    gym: ["gym", "workout", "exercise", "training", "fitness"],
+    office: ["office", "work", "desk", "meeting"],
+    school: ["school", "class", "studying", "study"],
+    party: ["party", "celebration", "friends"],
+    travel: ["travel", "trip", "vacation", "holiday", "airport", "flight"],
+    studying: ["studying", "study", "homework", "books"],
+    eating: ["eating", "food", "dinner", "lunch", "breakfast", "meal"],
+    workout: ["workout", "gym", "exercise", "training"],
+    selfie: ["selfie", "picture of me", "photo of me", "see you"],
+    outdoors: ["outdoor", "outside", "park", "hiking", "nature"],
+    indoors: ["indoor", "inside", "home", "house"],
+  };
+
+  for (const [tag, keywords] of Object.entries(keywordMap)) {
+    if (keywords.some((kw) => text.includes(kw))) tags.push(tag);
+  }
+
+  return tags;
 }
